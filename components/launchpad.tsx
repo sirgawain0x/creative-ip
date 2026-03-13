@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
 import { MY_PORTFOLIO } from '@/lib/data'
 import { IPCard } from './ip-card'
 import { RegisterIPWizard } from './register-ip-wizard'
@@ -20,19 +21,29 @@ import { cn } from '@/lib/utils'
 const STATS = [
   { label: 'Total IP Assets', value: '3', delta: '+1 this month', icon: Layers, glow: false },
   { label: 'Active Licenses', value: '48', delta: '+12 this week', icon: Activity, glow: false },
-  { label: 'Total Revenue', value: '5.42 ETH', delta: '+0.8 ETH', icon: DollarSign, glow: true },
+  { label: 'Total Revenue', value: '16,260 USDC', delta: '+2,400 USDC', icon: DollarSign, glow: true },
   { label: 'Total Views', value: '15.4K', delta: '+2.1K this week', icon: Eye, glow: false },
 ]
 
 const RECENT_ACTIVITY = [
-  { action: 'Commercial License purchased', asset: 'Neon Genesis Overture', by: '@studio_x', time: '2h ago', amount: '0.08 ETH' },
-  { action: 'Remix License purchased', asset: 'Chrome Horizon #001', by: '@artremix_dao', time: '5h ago', amount: '1.2 ETH' },
+  { action: 'Commercial License purchased', asset: 'Neon Genesis Overture', by: '@studio_x', time: '2h ago', amount: '250 USDC' },
+  { action: 'Remix License purchased', asset: 'Chrome Horizon #001', by: '@artremix_dao', time: '5h ago', amount: '3,600 USDC' },
   { action: 'IP Registered', asset: 'Chrome Horizon #001', by: 'You', time: '12h ago', amount: null },
   { action: 'Personal License purchased', asset: 'The Quiet Algorithm', by: '@reader_99', time: '1d ago', amount: '25 USDC' },
 ]
 
 export function Launchpad() {
   const [wizardOpen, setWizardOpen] = useState(false)
+  const { status, wallet } = useWallet()
+  const { login } = useAuth()
+
+  const handleRegisterClick = () => {
+    if (status !== 'loaded') {
+      if (login) login()
+    } else {
+      setWizardOpen(true)
+    }
+  }
 
   return (
     <>
@@ -55,14 +66,16 @@ export function Launchpad() {
           </div>
           <Button
             className="bg-primary text-primary-foreground font-mono text-xs gap-2 glow-primary self-start sm:self-auto shrink-0"
-            onClick={() => setWizardOpen(true)}
+            onClick={handleRegisterClick}
           >
             <Plus className="w-3.5 h-3.5" /> Register New IP
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {status === 'loaded' && wallet ? (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {STATS.map(({ label, value, delta, icon: Icon, glow }) => (
             <div
               key={label}
@@ -99,7 +112,7 @@ export function Launchpad() {
 
               {/* Add new card */}
               <button
-                onClick={() => setWizardOpen(true)}
+                onClick={handleRegisterClick}
                 className="glass rounded-xl border-2 border-dashed border-border/40 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-3 aspect-square text-muted-foreground hover:text-primary p-6 group"
               >
                 <div className="w-10 h-10 rounded-full border border-current flex items-center justify-center group-hover:glow-primary transition-all">
@@ -161,6 +174,26 @@ export function Launchpad() {
             </div>
           </div>
         </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-4 py-20 text-center glass rounded-xl border border-border/60">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+              <Layers className="w-7 h-7 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="font-serif font-bold text-lg text-foreground">Connect your wallet</p>
+              <p className="font-mono text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Please connect your wallet to view your IP portfolio, manage your assets, and track your revenue.
+              </p>
+            </div>
+            <Button
+              className="bg-primary text-primary-foreground font-semibold text-xs mt-2"
+              onClick={() => { if (login) login() }}
+            >
+              Connect Wallet
+            </Button>
+          </div>
+        )}
       </div>
 
       <RegisterIPWizard open={wizardOpen} onOpenChange={setWizardOpen} />

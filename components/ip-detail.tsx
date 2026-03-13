@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { type IPAsset } from '@/lib/data'
 import { BuyLicenseModal } from './buy-license-modal'
 import { Button } from './ui/button'
+import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
 import { cn } from '@/lib/utils'
 import {
   Music,
@@ -44,6 +45,8 @@ export function IPDetail({ asset }: IPDetailProps) {
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [imageZoom, setImageZoom] = useState(false)
+  const { status, wallet } = useWallet()
+  const { login } = useAuth()
 
   const progressRef = useRef<HTMLDivElement>(null)
 
@@ -278,11 +281,22 @@ export function IPDetail({ asset }: IPDetailProps) {
             {/* Buy CTA */}
             <div className="space-y-2 pt-2">
               <Button
-                className="w-full bg-primary text-primary-foreground font-mono text-sm glow-primary gap-2 h-12"
-                onClick={() => setBuyOpen(true)}
+                className={cn(
+                  "w-full font-mono text-sm gap-2 h-12",
+                  status === 'loaded' && wallet
+                    ? "bg-primary text-primary-foreground glow-primary"
+                    : "bg-secondary text-foreground border border-border/60 hover:bg-secondary/80"
+                )}
+                onClick={() => {
+                  if (status === 'loaded' && wallet) {
+                    setBuyOpen(true)
+                  } else {
+                    if (login) login()
+                  }
+                }}
               >
                 <ShoppingCart className="w-4 h-4" />
-                Buy License — {asset.price} {asset.currency}
+                {status === 'loaded' && wallet ? `Buy License — ${asset.price} ${asset.currency}` : 'Connect Wallet to Buy'}
               </Button>
               <p className="font-mono text-[10px] text-muted-foreground text-center">
                 Secured by Crossmint StoryKit · No gas fees · Card or Crypto
