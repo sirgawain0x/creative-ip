@@ -8,6 +8,7 @@ import { type IPAsset } from '@/lib/data'
 import { Button } from './ui/button'
 import { BuyLicenseModal } from './buy-license-modal'
 import { useState } from 'react'
+import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
 
 const TYPE_ICON = {
   music: Music,
@@ -41,6 +42,8 @@ interface IPCardProps {
 
 export function IPCard({ asset, className }: IPCardProps) {
   const [buyOpen, setBuyOpen] = useState(false)
+  const { status, wallet } = useWallet()
+  const { login } = useAuth()
   const Icon = TYPE_ICON[asset.type]
 
   return (
@@ -116,11 +119,22 @@ export function IPCard({ asset, className }: IPCardProps) {
             </div>
             <Button
               size="sm"
-              className="bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30 font-mono text-[10px] transition-all gap-1"
-              onClick={() => setBuyOpen(true)}
+              className={cn(
+                "font-mono text-[10px] transition-all gap-1",
+                status === 'loaded' && wallet
+                  ? "bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30"
+                  : "bg-secondary/50 text-foreground border border-border/60 hover:bg-secondary"
+              )}
+              onClick={() => {
+                if (status === 'loaded' && wallet) {
+                  setBuyOpen(true)
+                } else {
+                  if (login) login()
+                }
+              }}
             >
               <ShoppingCart className="w-3 h-3" />
-              License
+              {status === 'loaded' && wallet ? 'License' : 'Connect to License'}
             </Button>
           </div>
         </div>
