@@ -1,4 +1,4 @@
-export type IPAssetType = 'music' | 'literature' | 'image'
+export type IPAssetType = 'music' | 'literature' | 'image' | 'video'
 
 export type LicenseType = 'Commercial' | 'Remix' | 'Personal' | 'Exclusive'
 
@@ -39,24 +39,22 @@ export interface IPAsset {
 export const MY_PORTFOLIO: IPAsset[] = [
   {
     id: 'my-1',
-    storyProtocolId: 'IP-0x4a2f...7c91',
-    title: 'Neon Genesis Overture',
-    creator: 'You',
-    creatorHandle: '@creator',
-    type: 'music',
-    coverImage: '/images/music-1.jpg',
-    description: 'An orchestral piece blending classical motifs with synthetic textures from 2050.',
+    storyProtocolId: '0xAaF21Fa9329b4F6deeEfc50f093f73d66f2d15A3',
+    title: 'My Creative Videos #1',
+    creator: '0xbe39...0424',
+    creatorHandle: '@Creator',
+    type: 'video',
+    coverImage: '/images/art-3.jpg', // Placeholder since IPFS gateway failed
+    description: 'Video metadata registered on Story Protocol. NFT Token ID: 1, Collection: 0x1f12...0C63',
     licenses: ['Commercial', 'Remix'],
     price: 250,
     currency: 'USDC',
-    royaltyRate: 12,
-    registered: '2026-01-15',
-    tags: ['Orchestral', 'Cinematic', 'Electronic'],
+    royaltyRate: 10,
+    registered: '2026-03-01',
+    tags: ['Video', 'Creative', 'Story'],
     stats: { views: 4821, licenses: 34, revenue: 8160 },
-    duration: '4:32',
-    bpm: 120,
-    key: 'D Minor',
-    genre: 'Cinematic',
+    resolution: '1920 × 1080',
+    duration: '1:30',
   },
   {
     id: 'my-2',

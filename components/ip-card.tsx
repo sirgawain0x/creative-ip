@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Music, BookOpen, ImageIcon, ShoppingCart, ExternalLink } from 'lucide-react'
+import { Music, BookOpen, ImageIcon, ShoppingCart, ExternalLink, Video } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type IPAsset } from '@/lib/data'
 import { Button } from './ui/button'
@@ -14,18 +14,21 @@ const TYPE_ICON = {
   music: Music,
   literature: BookOpen,
   image: ImageIcon,
+  video: Video,
 }
 
 const TYPE_COLOR = {
   music: 'text-cyan-400',
   literature: 'text-amber-400',
   image: 'text-emerald-400',
+  video: 'text-purple-400',
 }
 
 const TYPE_BG = {
   music: 'bg-cyan-400/10 border-cyan-400/20',
   literature: 'bg-amber-400/10 border-amber-400/20',
   image: 'bg-emerald-400/10 border-emerald-400/20',
+  video: 'bg-purple-400/10 border-purple-400/20',
 }
 
 const LICENSE_COLORS: Record<string, string> = {

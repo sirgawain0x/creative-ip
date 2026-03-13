@@ -27,6 +27,7 @@ import {
   FileText,
   Maximize2,
   Hash,
+  Video,
 } from 'lucide-react'
 
 const LICENSE_COLORS: Record<string, string> = {
@@ -69,7 +70,7 @@ export function IPDetail({ asset }: IPDetailProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16">
         {/* Back button */}
         <Link
-          href="/exchange"
+          href="/"
           className="inline-flex items-center gap-2 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors mb-8 group"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" /> Back to Exchange
@@ -108,6 +109,7 @@ export function IPDetail({ asset }: IPDetailProps) {
                 {asset.type === 'music' && <Music className="w-3 h-3 text-primary" />}
                 {asset.type === 'literature' && <BookOpen className="w-3 h-3 text-amber-400" />}
                 {asset.type === 'image' && <ImageIcon className="w-3 h-3 text-emerald-400" />}
+                {asset.type === 'video' && <Video className="w-3 h-3 text-purple-400" />}
                 {asset.type}
               </div>
 

@@ -5,8 +5,16 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Menu, X, Sparkles, Wallet } from 'lucide-react'
+import { Menu, X, Sparkles, Wallet, LogOut, ExternalLink, Coins } from 'lucide-react'
 import { Button } from './ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
 
 const NAV_LINKS = [
@@ -18,7 +26,33 @@ export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { wallet, status } = useWallet()
-  const { login } = useAuth()
+  const { login, logout } = useAuth()
+  const [isOnrampLoading, setIsOnrampLoading] = useState(false)
+
+  const handleBuyUSDC = async () => {
+    if (!wallet?.address) return
+    setIsOnrampLoading(true)
+    
+    try {
+      const res = await fetch('/api/onramp/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: wallet.address })
+      })
+      
+      const data = await res.json()
+      
+      if (data.onrampUrl) {
+        window.open(data.onrampUrl, '_blank')
+      } else {
+        console.error('Failed to parse onramp URL', data)
+      }
+    } catch (err) {
+      console.error('Failed to initiate onramp session', err)
+    } finally {
+      setIsOnrampLoading(false)
+    }
+  }
 
   return (
     <>
@@ -67,12 +101,53 @@ export function Navbar() {
             </div>
 
             {status === 'loaded' && wallet ? (
-              <div className="hidden md:flex items-center gap-2 bg-secondary/50 border border-border/60 px-3 py-1.5 rounded-full">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="font-mono text-[10px] text-foreground">
-                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                </span>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="hidden md:flex items-center gap-2 bg-secondary/50 border border-border/60 px-3 py-1.5 rounded-full hover:bg-secondary/70 transition-colors cursor-pointer outline-none">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="font-mono text-[10px] text-foreground">
+                      {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                    </span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 glass border-border/60">
+                  <DropdownMenuLabel className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+                    Wallet Connected
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border/60" />
+                  <DropdownMenuItem className="font-mono text-xs flex items-center justify-between cursor-default">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="w-3.5 h-3.5" />
+                      <span>Balance</span>
+                    </div>
+                    <span>0.00 USDC</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleBuyUSDC}
+                    disabled={isOnrampLoading}
+                    className={cn(
+                      "font-mono text-xs cursor-pointer text-primary focus:text-primary focus:bg-primary/10 flex items-center justify-between w-full",
+                      isOnrampLoading && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Coins className="w-3.5 h-3.5" />
+                      <span>{isOnrampLoading ? 'Loading...' : 'Buy USDC'}</span>
+                    </div>
+                    {!isOnrampLoading && <ExternalLink className="w-3.5 h-3.5" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border/60" />
+                  <DropdownMenuItem 
+                    onClick={() => { if (logout) logout() }}
+                    className="font-mono text-xs text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Disconnect</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Button
                 size="sm"
@@ -114,11 +189,33 @@ export function Navbar() {
             ))}
             <div className="pt-2 flex flex-col gap-2">
               {status === 'loaded' && wallet ? (
-                <div className="flex items-center justify-center gap-2 bg-secondary/50 border border-border/60 px-4 py-3 rounded-lg">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="font-mono text-xs text-foreground">
-                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                  </span>
+                <div className="flex flex-col gap-2 bg-secondary/30 border border-border/60 p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="font-mono text-xs text-foreground">
+                        {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                      </span>
+                    </div>
+                    <span className="font-mono text-xs text-muted-foreground">0.00 USDC</span>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    className="w-full font-mono text-xs border-primary/20 text-primary hover:bg-primary/10 gap-2"
+                    onClick={handleBuyUSDC}
+                    disabled={isOnrampLoading}
+                  >
+                    <Coins className="w-3.5 h-3.5" />
+                    {isOnrampLoading ? 'Loading...' : 'Buy USDC'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full font-mono text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
+                    onClick={() => { if (logout) logout(); setMobileOpen(false); }}
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Disconnect
+                  </Button>
                 </div>
               ) : (
                 <Button
