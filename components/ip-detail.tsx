@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { type IPAsset } from '@/lib/data'
 import { BuyLicenseModal } from './buy-license-modal'
 import { Button } from './ui/button'
@@ -42,6 +42,7 @@ interface IPDetailProps {
 }
 
 export function IPDetail({ asset }: IPDetailProps) {
+  const router = useRouter()
   const [buyOpen, setBuyOpen] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -69,12 +70,12 @@ export function IPDetail({ asset }: IPDetailProps) {
     <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16">
         {/* Back button */}
-        <Link
-          href="/"
+        <button
+          onClick={() => router.back()}
           className="inline-flex items-center gap-2 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors mb-8 group"
         >
-          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" /> Back to Exchange
-        </Link>
+          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" /> Back
+        </button>
 
         <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Left: Media + metadata */}

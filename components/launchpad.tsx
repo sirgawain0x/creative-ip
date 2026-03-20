@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
-import { MY_PORTFOLIO as INITIAL_PORTFOLIO, IPAsset } from '@/lib/data'
+import { IPAsset } from '@/lib/data'
 import { IPCard } from './ip-card'
 import { RegisterIPWizard } from './register-ip-wizard'
 import { Button } from './ui/button'
@@ -15,8 +15,10 @@ import {
   Zap,
   ChevronRight,
   Activity,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { graphQLClient, GET_USER_IP_ASSETS, mapSubgraphAssetToIPAsset } from '@/lib/graphql'
 
 const STATS = [
   { label: 'Total IP Assets', value: '3', delta: '+1 this month', icon: Layers, glow: false },
@@ -34,9 +36,36 @@ const RECENT_ACTIVITY = [
 
 export function Launchpad() {
   const [wizardOpen, setWizardOpen] = useState(false)
-  const [myPortfolio, setMyPortfolio] = useState<IPAsset[]>(INITIAL_PORTFOLIO)
+  const [myPortfolio, setMyPortfolio] = useState<IPAsset[]>([])
+  const [loading, setLoading] = useState(true)
   const { status, wallet } = useWallet()
   const { login } = useAuth()
+
+  useEffect(() => {
+    async function fetchUserAssets() {
+      if (status !== 'loaded' || !wallet?.address) {
+        setLoading(false)
+        return
+      }
+      setLoading(true)
+      try {
+        const data: any = await graphQLClient.request(GET_USER_IP_ASSETS, {
+          owner: wallet.address.toLowerCase()
+        })
+        if (data.ipregistereds) {
+          const assets = await Promise.all(
+            data.ipregistereds.map((item: any) => mapSubgraphAssetToIPAsset(item))
+          )
+          setMyPortfolio(assets)
+        }
+      } catch (err) {
+        console.error('Failed to fetch from Goldsky:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUserAssets()
+  }, [status, wallet?.address])
 
   const handleRegisterClick = () => {
     if (status !== 'loaded') {
@@ -106,22 +135,28 @@ export function Launchpad() {
               <h2 className="font-serif font-bold text-lg text-foreground">Registered Assets</h2>
               <span className="font-mono text-[10px] text-muted-foreground">{myPortfolio.length} assets</span>
             </div>
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {myPortfolio.map((asset) => (
-                <IPCard key={asset.id} asset={asset} />
-              ))}
+            {loading ? (
+              <div className="flex justify-center items-center py-20 text-muted-foreground glass rounded-xl border border-border/60">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {myPortfolio.map((asset) => (
+                  <IPCard key={asset.id} asset={asset} />
+                ))}
 
-              {/* Add new card */}
-              <button
-                onClick={handleRegisterClick}
-                className="glass rounded-xl border-2 border-dashed border-border/40 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-3 aspect-square text-muted-foreground hover:text-primary p-6 group"
-              >
-                <div className="w-10 h-10 rounded-full border border-current flex items-center justify-center group-hover:glow-primary transition-all">
-                  <Plus className="w-4 h-4" />
-                </div>
-                <span className="font-mono text-[10px] uppercase tracking-widest">Register IP</span>
-              </button>
-            </div>
+                {/* Add new card */}
+                <button
+                  onClick={handleRegisterClick}
+                  className="glass rounded-xl border-2 border-dashed border-border/40 hover:border-primary/40 transition-all flex flex-col items-center justify-center gap-3 aspect-square text-muted-foreground hover:text-primary p-6 group"
+                >
+                  <div className="w-10 h-10 rounded-full border border-current flex items-center justify-center group-hover:glow-primary transition-all">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <span className="font-mono text-[10px] uppercase tracking-widest">Register IP</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Activity feed */}
