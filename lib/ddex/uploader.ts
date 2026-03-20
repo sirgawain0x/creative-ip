@@ -1,39 +1,34 @@
-import { Uploader } from "@irys/upload";
-import { Ethereum } from "@irys/upload-ethereum";
+import * as fs from 'fs';
 import { DDEXTrack } from "./parser";
 
-export async function uploadToArweave(filePath: string, track: DDEXTrack): Promise<string> {
-    console.log(`\n--- Uploading ${track.title} (${track.fileName}) to Arweave via Irys ---`);
-
-    const rpcURL = process.env.BASE_RPC_URL || "https://sepolia.base.org";
-    const privateKey = process.env.IRYS_PRIVATE_KEY;
-
-    if (!privateKey) {
-        throw new Error("Missing IRYS_PRIVATE_KEY for Arweave upload.");
-    }
+export async function uploadToGrove(filePath: string, track: DDEXTrack): Promise<string> {
+    console.log(`\n--- Uploading ${track.title} (${track.fileName}) to Grove IPFS ---`);
 
     try {
-        const irysUploader = await Uploader(Ethereum).withWallet(privateKey).withRpc(rpcURL);
+        console.log(`Starting Grove HTTP upload for ${filePath}...`);
         
-        // Ensure funding is sufficient for the file size
-        // Note: For production, consider using irysUploader.fund() if unfunded
-        // For now, depending on the network, we assume it's funded or auto-funded if configured
+        const fileData = fs.readFileSync(filePath);
         
-        console.log(`Starting Irys upload for ${filePath}...`);
-        const receipt = await irysUploader.uploadFile(filePath, {
-            tags: [
-                { name: "Content-Type", value: "audio/wav" }, // Assuming wav based on prompt
-                { name: "Title", value: track.title },
-                { name: "ISRC", value: track.isrc }
-            ]
+        // Post directly to grove API with the correct content type. 1514 is Story mainnet
+        const response = await fetch("https://api.grove.storage/?chain_id=1514", {
+            method: "POST",
+            headers: {
+                "Content-Type": filePath.endsWith('.wav') ? "audio/wav" : "audio/mpeg"
+            },
+            body: fileData
         });
-
-        const arweaveURI = `ar://${receipt.id}`;
-        console.log(`✅ Upload successful: ${arweaveURI}`);
         
-        return arweaveURI;
+        if (!response.ok) {
+           throw new Error(`Grove upload failed with status ${response.status}: ${await response.text()}`);
+        }
+        
+        const receipt = await response.json();
+        const uri = receipt.uri;
+        console.log(`✅ Upload successful: ${uri}`);
+        
+        return uri;
     } catch (error) {
-        console.error("Irys Upload Error:", error);
-        throw new Error(`Failed to upload ${track.fileName} to Arweave.`);
+        console.error("Grove Upload Error:", error);
+        throw new Error(`Failed to upload ${track.fileName} to Grove.`);
     }
 }

@@ -22,6 +22,7 @@ export interface IPAsset {
     licenses: number
     revenue: number
   }
+  metadataURI?: string
   // Music specific
   duration?: string
   bpm?: number

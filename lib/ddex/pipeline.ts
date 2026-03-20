@@ -1,6 +1,6 @@
 import { downloadDDEXDelivery } from './s4-client';
 import { parseDDEXManifest } from './parser';
-import { uploadToArweave } from './uploader'; 
+import { uploadToGrove } from './uploader'; 
 import { registerStoryIPAsset } from './story-registrar';
 import extract from 'extract-zip';
 import fs from 'fs';
@@ -53,7 +53,7 @@ export async function processDDEXDelivery(fileName: string): Promise<void> {
                 continue;
             }
 
-            const arweaveURI = await uploadToArweave(audioPath, track); 
+            const arweaveURI = await uploadToGrove(audioPath, track); 
             await registerStoryIPAsset(albumData, track, artistWallet, arweaveURI);
         }
 
