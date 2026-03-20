@@ -1,5 +1,6 @@
 import { GraphQLClient, gql } from 'graphql-request'
 import { IPAsset } from './data'
+import { resolveGroveURI } from './grove'
 
 const endpoint = process.env.NEXT_PUBLIC_GOLDSKY_GRAPHQL_URL
 
@@ -60,25 +61,40 @@ export const GET_IP_ASSET_BY_ID = gql`
 `
 
 // Helper to map the raw Subgraph data to our application's IPAsset interface
-export function mapSubgraphAssetToIPAsset(subgraphData: any): IPAsset {
+export async function mapSubgraphAssetToIPAsset(subgraphData: any): Promise<IPAsset> {
   // Extract block timestamp safely (converting seconds to ms if needed)
   const dateObj = new Date(Number(subgraphData.blockTimestamp) * 1000)
   
+  let metadata: any = null
+  if (subgraphData.metadataURI) {
+    try {
+      const url = resolveGroveURI(subgraphData.metadataURI)
+      if (url) {
+        const res = await fetch(url)
+        metadata = await res.json()
+      }
+    } catch (e) {
+      console.warn('Failed to fetch metadata from Grove:', e)
+    }
+  }
+
+  const getAttr = (key: string) => metadata?.attributes?.find((a: any) => a.key === key)?.value
+
   return {
     id: subgraphData.id,
     storyProtocolId: subgraphData.ipId,
-    title: \`Asset \${subgraphData.tokenId || ''}\`, // Defaulting, as off-chain metadata (from URI) might require ipfs resolution
-    creator: 'Decentralized Creator', // In production, resolve from metadataURI or story protocol DID
-    creatorHandle: \`\${subgraphData.owner.substring(0, 6)}...\${subgraphData.owner.substring(subgraphData.owner.length - 4)}\`,
-    type: 'music', // Placeholder until metadata is decoded
-    coverImage: '/images/art-1.jpg',
-    description: 'An IP Asset registered on the Story Protocol Mainnet. The metadata is stored off-chain at ' + subgraphData.metadataURI,
-    licenses: ['Commercial'], // Default/placeholder
+    title: metadata?.title || `Asset ${subgraphData.tokenId || ''}`,
+    creator: metadata?.creator || 'Decentralized Creator',
+    creatorHandle: `${subgraphData.owner.substring(0, 6)}...${subgraphData.owner.substring(subgraphData.owner.length - 4)}`,
+    type: getAttr('Type') || metadata?.type || 'music',
+    coverImage: metadata?.image ? resolveGroveURI(metadata.image) : '/images/art-1.jpg',
+    description: metadata?.description || 'An IP Asset registered on the Story Protocol Mainnet. The metadata is stored off-chain at ' + subgraphData.metadataURI,
+    licenses: getAttr('Licenses') ? getAttr('Licenses').split(',').map((s:string) => s.trim()) : ['Commercial'],
     price: 0,
     currency: 'USDC',
-    royaltyRate: 10,
+    royaltyRate: getAttr('RoyaltyRate') ? Number(getAttr('RoyaltyRate')) : 10,
     registered: dateObj.toISOString().split('T')[0],
-    tags: ['On-Chain', 'Story Protocol'],
+    tags: metadata?.tags || ['On-Chain', 'Story Protocol'],
     stats: { views: 0, licenses: 0, revenue: 0 },
     // Retaining raw mapping data mapping
     metadataURI: subgraphData.metadataURI,

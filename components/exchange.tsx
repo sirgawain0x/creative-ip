@@ -43,7 +43,10 @@ export function Exchange() {
           skip: 0
         })
         if (data.ipregistereds) {
-          setAssetsList(data.ipregistereds.map(mapSubgraphAssetToIPAsset))
+          const assets = await Promise.all(
+            data.ipregistereds.map((item: any) => mapSubgraphAssetToIPAsset(item))
+          )
+          setAssetsList(assets)
         }
       } catch (err) {
         console.error('Failed to fetch from Goldsky:', err)

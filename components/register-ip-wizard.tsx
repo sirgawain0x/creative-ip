@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { IPAsset } from '@/lib/data'
+import { uploadFileToGrove, uploadMetadataToGrove } from '@/lib/grove'
+import { useWallet } from '@crossmint/client-sdk-react-ui'
 import {
   Music,
   BookOpen,
@@ -33,6 +35,7 @@ interface RegisterIPWizardProps {
 }
 
 export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: RegisterIPWizardProps) {
+  const { wallet } = useWallet()
   const [step, setStep] = useState(1)
   const [type, setType] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -77,14 +80,65 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
     )
   }
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     setRegistering(true)
-    setTimeout(() => {
+    
+    try {
+      let imageUri = type === 'image' ? '/images/art-1.jpg' : type === 'music' ? '/images/music-1.jpg' : '/images/lit-1.jpg'
+      let mediaUri = ''
+
+      if (file) {
+        const fileResponse = await uploadFileToGrove(file)
+        mediaUri = fileResponse.uri
+        if (type === 'image') imageUri = fileResponse.uri
+      }
+
+      const metadata = {
+        title: title || 'Untitled',
+        description: description || '',
+        creator: 'You',
+        attributes: [
+          { key: 'Type', value: type || 'music' },
+          { key: 'Media', value: mediaUri },
+          { key: 'Licenses', value: licenses.join(', ') },
+          { key: 'RoyaltyRate', value: royalty }
+        ],
+        image: imageUri
+      }
+
+      const metadataResponse = await uploadMetadataToGrove(metadata)
+      const metadataUri = metadataResponse.uri
+
+      // Execute actual smart contract IP registration via Crossmint Server API route
+      const registerRes = await fetch('/api/register-ip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          ipType: type,
+          imageUri: imageUri,
+          mediaUri: mediaUri,
+          owner: wallet?.address || 'email:test@example.com:story-testnet', // Fallback for debugging, ideally never hits due to button constraint
+          attributes: metadata.attributes
+        })
+      });
+
+      if (!registerRes.ok) {
+        const errData = await registerRes.json().catch(()=>({}));
+        throw new Error(errData.error || "Failed to register via Crossmint API");
+      }
+
+      const registerData = await registerRes.json();
+      console.log('Crossmint Registration Data:', registerData);
+      
+      const newMockId = registerData.onChain?.ipAssetId || registerData.id || `IP-0x${Math.random().toString(16).slice(2, 10).toUpperCase()}…`
+      setCreatedId(newMockId)
+      
       setRegistering(false)
       setDone(true)
-      
-      const newMockId = `IP-0x${Math.random().toString(16).slice(2, 10).toUpperCase()}…`
-      setCreatedId(newMockId)
       
       if (onRegisterSuccess) {
         onRegisterSuccess({
@@ -94,7 +148,7 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
           creator: 'You',
           creatorHandle: '@creator',
           type: (type as any) || 'music',
-          coverImage: type === 'image' ? '/images/art-1.jpg' : type === 'music' ? '/images/music-1.jpg' : '/images/lit-1.jpg',
+          coverImage: imageUri,
           description: description || '',
           licenses: licenses as any,
           price: 0,
@@ -102,10 +156,15 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
           royaltyRate: Number(royalty) || 10,
           registered: new Date().toISOString().split('T')[0],
           tags: ['New', 'Registered'],
-          stats: { views: 0, licenses: 0, revenue: 0 }
+          stats: { views: 0, licenses: 0, revenue: 0 },
+          metadataURI: metadataUri
         })
       }
-    }, 2500)
+    } catch (err) {
+      console.error(err)
+      setRegistering(false)
+      alert("Failed to file to Grove IPFS.")
+    }
   }
 
   const handleClose = () => {
@@ -331,10 +390,10 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
                 </Button>
                 <Button
                   className="flex-1 bg-primary text-primary-foreground font-mono text-xs gap-2 glow-primary"
-                  disabled={licenses.length === 0}
+                  disabled={licenses.length === 0 || !wallet}
                   onClick={handleRegister}
                 >
-                  <Zap className="w-3.5 h-3.5" /> Register on Chain
+                  <Zap className="w-3.5 h-3.5" /> {wallet ? 'Register on Chain' : 'Connect Wallet'}
                 </Button>
               </div>
             </div>
