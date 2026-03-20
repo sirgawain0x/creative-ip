@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
-import { MY_PORTFOLIO } from '@/lib/data'
+import { MY_PORTFOLIO as INITIAL_PORTFOLIO, IPAsset } from '@/lib/data'
 import { IPCard } from './ip-card'
 import { RegisterIPWizard } from './register-ip-wizard'
 import { Button } from './ui/button'
@@ -34,6 +34,7 @@ const RECENT_ACTIVITY = [
 
 export function Launchpad() {
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [myPortfolio, setMyPortfolio] = useState<IPAsset[]>(INITIAL_PORTFOLIO)
   const { status, wallet } = useWallet()
   const { login } = useAuth()
 
@@ -103,10 +104,10 @@ export function Launchpad() {
           <div className="lg:col-span-2 space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="font-serif font-bold text-lg text-foreground">Registered Assets</h2>
-              <span className="font-mono text-[10px] text-muted-foreground">{MY_PORTFOLIO.length} assets</span>
+              <span className="font-mono text-[10px] text-muted-foreground">{myPortfolio.length} assets</span>
             </div>
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {MY_PORTFOLIO.map((asset) => (
+              {myPortfolio.map((asset) => (
                 <IPCard key={asset.id} asset={asset} />
               ))}
 
@@ -157,7 +158,7 @@ export function Launchpad() {
                 <h3 className="font-serif font-semibold text-sm text-foreground">Royalty Sources</h3>
                 <Zap className="w-3.5 h-3.5 text-primary" />
               </div>
-              {MY_PORTFOLIO.map((asset) => (
+              {myPortfolio.map((asset) => (
                 <div key={asset.id} className="space-y-1">
                   <div className="flex justify-between font-mono text-[10px]">
                     <span className="text-muted-foreground truncate max-w-[140px]">{asset.title}</span>
@@ -196,7 +197,11 @@ export function Launchpad() {
         )}
       </div>
 
-      <RegisterIPWizard open={wizardOpen} onOpenChange={setWizardOpen} />
+      <RegisterIPWizard 
+        open={wizardOpen} 
+        onOpenChange={setWizardOpen} 
+        onRegisterSuccess={(newAsset) => setMyPortfolio([newAsset, ...myPortfolio])} 
+      />
     </>
   )
 }
