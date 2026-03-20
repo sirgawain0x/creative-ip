@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { IPAsset } from '@/lib/data'
 import {
   Music,
   BookOpen,
@@ -28,9 +29,10 @@ const LICENSE_OPTIONS = ['Commercial', 'Remix', 'Personal', 'Exclusive']
 interface RegisterIPWizardProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onRegisterSuccess?: (asset: IPAsset) => void
 }
 
-export function RegisterIPWizard({ open, onOpenChange }: RegisterIPWizardProps) {
+export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: RegisterIPWizardProps) {
   const [step, setStep] = useState(1)
   const [type, setType] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -39,6 +41,33 @@ export function RegisterIPWizard({ open, onOpenChange }: RegisterIPWizardProps) 
   const [licenses, setLicenses] = useState<string[]>([])
   const [registering, setRegistering] = useState(false)
   const [done, setDone] = useState(false)
+  const [file, setFile] = useState<File | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [createdId, setCreatedId] = useState('')
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+  
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFile(e.dataTransfer.files[0])
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0])
+    }
+  }
 
   const TOTAL_STEPS = 3
 
@@ -53,6 +82,29 @@ export function RegisterIPWizard({ open, onOpenChange }: RegisterIPWizardProps) 
     setTimeout(() => {
       setRegistering(false)
       setDone(true)
+      
+      const newMockId = `IP-0x${Math.random().toString(16).slice(2, 10).toUpperCase()}…`
+      setCreatedId(newMockId)
+      
+      if (onRegisterSuccess) {
+        onRegisterSuccess({
+          id: `new-${Date.now()}`,
+          storyProtocolId: newMockId,
+          title: title || 'Untitled',
+          creator: 'You',
+          creatorHandle: '@creator',
+          type: (type as any) || 'music',
+          coverImage: type === 'image' ? '/images/art-1.jpg' : type === 'music' ? '/images/music-1.jpg' : '/images/lit-1.jpg',
+          description: description || '',
+          licenses: licenses as any,
+          price: 0,
+          currency: 'USDC',
+          royaltyRate: Number(royalty) || 10,
+          registered: new Date().toISOString().split('T')[0],
+          tags: ['New', 'Registered'],
+          stats: { views: 0, licenses: 0, revenue: 0 }
+        })
+      }
     }, 2500)
   }
 
@@ -60,11 +112,9 @@ export function RegisterIPWizard({ open, onOpenChange }: RegisterIPWizardProps) 
     onOpenChange(false)
     setTimeout(() => {
       setStep(1); setType(null); setTitle(''); setDescription('')
-      setRoyalty('10'); setLicenses([]); setDone(false)
+      setRoyalty('10'); setLicenses([]); setDone(false); setFile(null); setCreatedId('');
     }, 300)
   }
-
-  const mockId = `IP-0x${Math.random().toString(16).slice(2, 10).toUpperCase()}…`
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -162,14 +212,49 @@ export function RegisterIPWizard({ open, onOpenChange }: RegisterIPWizardProps) 
                 </div>
 
                 {/* File upload */}
-                <div className="border-2 border-dashed border-border/60 rounded-xl p-6 text-center hover:border-primary/30 transition-colors cursor-pointer group">
-                  <Upload className="w-6 h-6 text-muted-foreground group-hover:text-primary mx-auto mb-2 transition-colors" />
-                  <p className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                    Drop your file here or <span className="text-primary underline">browse</span>
-                  </p>
-                  <p className="font-mono text-[9px] text-muted-foreground/60 mt-1">
-                    MP3, WAV, PDF, EPUB, PNG, JPG — max 500MB
-                  </p>
+                <div 
+                  className={cn(
+                    "border-2 border-dashed rounded-xl p-6 text-center transition-colors group",
+                    isDragging ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/30"
+                  )}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <input 
+                    type="file" 
+                    id="file-upload" 
+                    className="hidden" 
+                    onChange={handleFileChange}
+                    accept="audio/*,image/*,.pdf,.epub"
+                  />
+                  {!file ? (
+                    <label htmlFor="file-upload" className="cursor-pointer block">
+                      <Upload className={cn(
+                        "w-6 h-6 mx-auto mb-2 transition-colors",
+                         isDragging ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                      )} />
+                      <p className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                        Drop your file here or <span className="text-primary underline">browse</span>
+                      </p>
+                      <p className="font-mono text-[9px] text-muted-foreground/60 mt-1">
+                        MP3, WAV, PDF, EPUB, PNG, JPG — max 500MB
+                      </p>
+                    </label>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                       <CheckCircle2 className="w-6 h-6 text-primary" />
+                       <p className="font-mono text-xs text-foreground bg-secondary/30 px-3 py-1.5 rounded truncate max-w-[200px]">
+                         {file.name}
+                       </p>
+                       <button 
+                         onClick={() => setFile(null)}
+                         className="font-mono text-[10px] text-destructive hover:underline"
+                       >
+                         Remove
+                       </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -280,7 +365,7 @@ export function RegisterIPWizard({ open, onOpenChange }: RegisterIPWizardProps) 
               </div>
               <div className="w-full bg-secondary/30 rounded-lg p-3 border border-border/40">
                 <p className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Story Protocol ID</p>
-                <p className="font-mono text-[10px] text-primary">{mockId}</p>
+                <p className="font-mono text-[10px] text-primary">{createdId}</p>
               </div>
               <Button
                 className="w-full bg-primary text-primary-foreground font-mono text-xs"

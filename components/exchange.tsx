@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { MARKETPLACE_ASSETS } from '@/lib/data'
+import { useState, useEffect, useMemo } from 'react'
 import { IPCard } from './ip-card'
 import { Input } from './ui/input'
 import { Button } from './ui/button'
-import { Search, SlidersHorizontal, Music, BookOpen, ImageIcon, X } from 'lucide-react'
+import { Search, SlidersHorizontal, Music, BookOpen, ImageIcon, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { IPAssetType, LicenseType } from '@/lib/data'
+import type { IPAsset, IPAssetType, LicenseType } from '@/lib/data'
+import { graphQLClient, GET_RECENT_IP_ASSETS, mapSubgraphAssetToIPAsset } from '@/lib/graphql'
 
 const TYPE_FILTERS: { id: IPAssetType | 'all'; label: string; icon?: React.ComponentType<{ className?: string }> }[] = [
   { id: 'all', label: 'All' },
@@ -31,9 +31,31 @@ export function Exchange() {
   const [licenseFilter, setLicenseFilter] = useState<LicenseType | null>(null)
   const [sort, setSort] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
+  
+  const [assetsList, setAssetsList] = useState<IPAsset[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchAssets() {
+      try {
+        const data: any = await graphQLClient.request(GET_RECENT_IP_ASSETS, {
+          first: 100,
+          skip: 0
+        })
+        if (data.ipregistereds) {
+          setAssetsList(data.ipregistereds.map(mapSubgraphAssetToIPAsset))
+        }
+      } catch (err) {
+        console.error('Failed to fetch from Goldsky:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAssets()
+  }, [])
 
   const filtered = useMemo(() => {
-    let assets = [...MARKETPLACE_ASSETS]
+    let assets = [...assetsList]
 
     if (search) {
       const q = search.toLowerCase()
@@ -210,7 +232,11 @@ export function Exchange() {
       </div>
 
       {/* Grid */}
-      {filtered.length > 0 ? (
+      {loading ? (
+        <div className="flex justify-center items-center py-20 text-muted-foreground">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      ) : filtered.length > 0 ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((asset) => (
             <IPCard key={asset.id} asset={asset} />
@@ -222,7 +248,9 @@ export function Exchange() {
             <Search className="w-7 h-7 text-muted-foreground" />
           </div>
           <div>
-            <p className="font-serif font-bold text-lg text-foreground">No assets found</p>
+            <p className="font-serif font-bold text-lg text-foreground">
+              {assetsList.length === 0 ? 'No on-chain assets found' : 'No assets found matching filters'}
+            </p>
             <p className="font-mono text-xs text-muted-foreground mt-1">Try adjusting your search or filters</p>
           </div>
           <Button variant="outline" className="font-mono text-xs border-border/60" onClick={clearFilters}>
