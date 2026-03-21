@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import fs from 'fs';
 import path from 'path';
 
@@ -44,4 +44,18 @@ export async function downloadDDEXDelivery(fileName: string, localPath: string):
     writeStream.on('finish', resolve);
     writeStream.on('error', reject);
   });
+}
+
+export async function deleteFromMega(bucket: string | undefined, fileName: string): Promise<void> {
+  console.log(`Deleting ${fileName} from MEGA S4 Inbox...`);
+  
+  if (!bucket) throw new Error("Missing bucket configuration");
+  
+  const command = new DeleteObjectCommand({
+    Bucket: bucket,
+    Key: fileName,
+  });
+
+  await s4Client.send(command);
+  console.log(`✅ Deleted ${fileName}`);
 }
