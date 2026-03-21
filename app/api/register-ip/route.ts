@@ -2,8 +2,17 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { title, description, ipType, imageUri, mediaUri, owner, attributes } = body;
+    const formData = await req.formData();
+    
+    const title = formData.get('title') as string || 'Untitled';
+    const description = formData.get('description') as string || '';
+    const ipType = formData.get('ipType') as string || 'music';
+    const owner = formData.get('owner') as string;
+    const file = formData.get('file') as File | null;
+    let imageUri = formData.get('imageUri') as string || '';
+
+    const licenses = formData.get('licenses') as string || '';
+    const royalty = formData.get('royalty') as string || '10';
 
     if (!owner) {
         return NextResponse.json({ error: 'Missing owner address' }, { status: 400 });
@@ -16,28 +25,44 @@ export async function POST(req: Request) {
         throw new Error("Missing COLLECTION_ID in environment variables");
     }
 
-    const payload = {
-      owner: owner,
-      nftMetadata: {
-        name: title,
-        description: description,
-        image: imageUri
-      },
-      ipAssetMetadata: {
-        title: title,
-        ipType: ipType,
-        attributes: attributes,
-        ...(mediaUri && mediaUri !== imageUri ? { media: [{ name: title, url: mediaUri, mimeType: 'application/octet-stream' }] } : {})
-      }
+    const crossmintFormData = new FormData();
+    crossmintFormData.append('owner', owner);
+    
+    const nftMetadata: any = {
+      name: title,
+      description: description,
     };
+    
+    const ipAssetMetadata: any = {
+      title: title,
+      ipType: ipType,
+      attributes: [
+          { key: 'Type', value: ipType },
+          { key: 'Licenses', value: licenses },
+          { key: 'RoyaltyRate', value: royalty }
+      ]
+    };
+
+    if (file) {
+      if (ipType === 'image' || file.type.startsWith('image/')) {
+        crossmintFormData.append('image', file);
+      } else {
+        crossmintFormData.append('animation_url', file);
+        if (imageUri) nftMetadata.image = imageUri;
+      }
+    } else if (imageUri) {
+      nftMetadata.image = imageUri;
+    }
+
+    crossmintFormData.append('nftMetadata', JSON.stringify(nftMetadata));
+    crossmintFormData.append('ipAssetMetadata', JSON.stringify(ipAssetMetadata));
 
     const res = await fetch(`${CROSSMINT_BASE_URL}/v1/ip/collections/${collectionId}/ipassets`, {
       method: "POST",
       headers: {
         "X-API-KEY": process.env.CROSSMINT_SERVER_KEY || "",
-        "Content-Type": "application/json"
       },
-      body: JSON.stringify(payload)
+      body: crossmintFormData
     });
 
     if (!res.ok) {

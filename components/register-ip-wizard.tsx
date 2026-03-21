@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { IPAsset } from '@/lib/data'
-import { uploadFileToGrove, uploadMetadataToGrove } from '@/lib/grove'
 import { useWallet } from '@crossmint/client-sdk-react-ui'
 import {
   Music,
@@ -85,45 +84,24 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
     
     try {
       let imageUri = type === 'image' ? '/images/art-1.jpg' : type === 'music' ? '/images/music-1.jpg' : '/images/lit-1.jpg'
-      let mediaUri = ''
 
+      const formData = new FormData()
+      formData.append('title', title || 'Untitled')
+      formData.append('description', description || '')
+      formData.append('ipType', type || 'music')
+      formData.append('royalty', royalty)
+      formData.append('licenses', licenses.join(', '))
+      formData.append('owner', wallet?.address || 'email:test@example.com:story-testnet')
+      formData.append('imageUri', imageUri)
+      
       if (file) {
-        const fileResponse = await uploadFileToGrove(file)
-        mediaUri = fileResponse.uri
-        if (type === 'image') imageUri = fileResponse.uri
+        formData.append('file', file)
       }
-
-      const metadata = {
-        title: title || 'Untitled',
-        description: description || '',
-        creator: 'You',
-        attributes: [
-          { key: 'Type', value: type || 'music' },
-          { key: 'Media', value: mediaUri },
-          { key: 'Licenses', value: licenses.join(', ') },
-          { key: 'RoyaltyRate', value: royalty }
-        ],
-        image: imageUri
-      }
-
-      const metadataResponse = await uploadMetadataToGrove(metadata)
-      const metadataUri = metadataResponse.uri
 
       // Execute actual smart contract IP registration via Crossmint Server API route
       const registerRes = await fetch('/api/register-ip', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          ipType: type,
-          imageUri: imageUri,
-          mediaUri: mediaUri,
-          owner: wallet?.address || 'email:test@example.com:story-testnet', // Fallback for debugging, ideally never hits due to button constraint
-          attributes: metadata.attributes
-        })
+        body: formData
       });
 
       if (!registerRes.ok) {
@@ -157,13 +135,13 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
           registered: new Date().toISOString().split('T')[0],
           tags: ['New', 'Registered'],
           stats: { views: 0, licenses: 0, revenue: 0 },
-          metadataURI: metadataUri
+          metadataURI: ''
         })
       }
     } catch (err) {
       console.error(err)
       setRegistering(false)
-      alert("Failed to file to Grove IPFS.")
+      alert("Failed to register IP via Crossmint native IPFS.")
     }
   }
 
