@@ -12,6 +12,7 @@ export interface DDEXTrack {
 export interface DDEXAlbumData {
   albumTitle: string;
   artist: string;
+  releaseDate: Date;
   tracks: DDEXTrack[];
 }
 
@@ -32,6 +33,12 @@ export async function parseDDEXManifest(xmlFilePath: string): Promise<DDEXAlbumD
     throw new Error(`SECURITY REJECTION: Expected DPID ${CREATIVE_TV_DPID}, found ${actualRecipient}.`);
   }
 
+  // Extract Global Release Date
+  const dealList = root.DealList?.ReleaseDeal || [];
+  const mainDeal = Array.isArray(dealList) ? dealList[0] : dealList;
+  const releaseDateString = mainDeal?.Deal?.DealTerms?.ValidityPeriod?.StartDate || new Date().toISOString(); 
+  const releaseDate = new Date(releaseDateString);
+
   // 2. Extract Metadata
   const releaseList = root.ReleaseList?.Release || [];
   const mainRelease = Array.isArray(releaseList) ? releaseList[0] : releaseList;
@@ -46,6 +53,7 @@ export async function parseDDEXManifest(xmlFilePath: string): Promise<DDEXAlbumD
   return {
     albumTitle: mainRelease.ReferenceTitle?.TitleText || 'Unknown Album',
     artist: mainRelease.ReleaseId?.DisplayArtistName || 'Unknown Artist',
+    releaseDate: releaseDate,
     tracks: tracksArray.map((track: any) => ({
       title: track.ReferenceTitle?.TitleText || 'Unknown Track',
       isrc: track.SoundRecordingId?.ISRC || '',
