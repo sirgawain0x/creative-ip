@@ -1,4 +1,4 @@
-import { processDDEXDelivery } from '../lib/ddex/pipeline';
+import { routeDDEXDelivery } from '../lib/ddex/ingestion-router';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -22,7 +22,7 @@ async function main() {
     }
 
     const fileName = args[0];
-    await processDDEXDelivery(fileName);
+    await routeDDEXDelivery(fileName);
 }
 
 main().catch(error => {
