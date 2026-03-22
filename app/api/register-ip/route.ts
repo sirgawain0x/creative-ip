@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -63,9 +64,16 @@ export async function POST(req: Request) {
             });
 
             await s3Client.send(command);
-            const publicUrl = `${process.env.MEGA_S4_ENDPOINT}/${bucketName}/${filename}`;
-            console.log("Successfully uploaded to Mega S4:", publicUrl);
-            return publicUrl;
+            
+            // Generate a presigned URL valid for 2 hours (7200 seconds) so Crossmint can securely index it
+            const getCommand = new GetObjectCommand({
+                Bucket: bucketName,
+                Key: filename
+            });
+            const presignedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 7200 });
+            
+            console.log("Successfully uploaded to Mega S4, presigned URL:", presignedUrl);
+            return presignedUrl;
         } catch (error) {
             console.error("Mega S4 Upload Error:", error);
             return null;
