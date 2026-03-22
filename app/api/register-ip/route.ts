@@ -8,6 +8,8 @@ export async function POST(req: Request) {
     const description = formData.get('description') as string || '';
     const ipType = formData.get('ipType') as string || 'music';
     const owner = formData.get('owner') as string;
+    // We get the file from user but Crossmint IPAsset API only accepts public URLs via JSON.
+    // In a production app, you would first upload this file to an IPFS/S3 provider.
     const file = formData.get('file') as File | null;
     let imageUri = formData.get('imageUri') as string || '';
 
@@ -25,17 +27,40 @@ export async function POST(req: Request) {
         throw new Error("Missing COLLECTION_ID in environment variables");
     }
 
-    const crossmintFormData = new FormData();
-    crossmintFormData.append('owner', owner);
+    // Use dummy public URLs for the example
+    const MOCK_IMAGE_URL = "https://mintcdn.com/crossmint/wfEo4Py0D7KOM99v/images/solutions/intellectual-property/story.jpeg";
+    const MOCK_AUDIO_URL = "https://cdn1.suno.ai/c001fd6e-d6cd-474f-a7b6-6e6a9b3e2515.mp3";
+    const MOCK_LIT_URL = "https://example.com/book.epub";
+
+    const isMusic = ipType === 'music';
+    const isImage = ipType === 'image';
+    const isLit = ipType === 'literature';
+
+    const mediaUrl = isMusic ? MOCK_AUDIO_URL : isLit ? MOCK_LIT_URL : MOCK_IMAGE_URL;
+    const mediaType = isMusic ? 'audio/mpeg' : isLit ? 'application/epub+zip' : 'image/jpeg';
     
     const nftMetadata: any = {
       name: title,
       description: description,
+      image: isImage ? MOCK_IMAGE_URL : MOCK_IMAGE_URL,
     };
     
+    if (!isImage) {
+      nftMetadata.animation_url = mediaUrl;
+    }
+
     const ipAssetMetadata: any = {
       title: title,
       ipType: ipType,
+      mediaUrl: mediaUrl,
+      mediaType: mediaType,
+      creators: [
+          {
+              name: 'Creator',
+              email: owner.split(':')[1] || 'creator@example.com',
+              contributionPercent: 100
+          }
+      ],
       attributes: [
           { key: 'Type', value: ipType },
           { key: 'Licenses', value: licenses },
@@ -43,26 +68,19 @@ export async function POST(req: Request) {
       ]
     };
 
-    if (file) {
-      if (ipType === 'image' || file.type.startsWith('image/')) {
-        crossmintFormData.append('image', file);
-      } else {
-        crossmintFormData.append('animation_url', file);
-        if (imageUri) nftMetadata.image = imageUri;
-      }
-    } else if (imageUri) {
-      nftMetadata.image = imageUri;
-    }
-
-    crossmintFormData.append('nftMetadata', JSON.stringify(nftMetadata));
-    crossmintFormData.append('ipAssetMetadata', JSON.stringify(ipAssetMetadata));
+    const crossmintPayload = {
+      owner: owner,
+      nftMetadata,
+      ipAssetMetadata
+    };
 
     const res = await fetch(`${CROSSMINT_BASE_URL}/v1/ip/collections/${collectionId}/ipassets`, {
       method: "POST",
       headers: {
         "X-API-KEY": process.env.CROSSMINT_SERVER_KEY || "",
+        "Content-Type": "application/json"
       },
-      body: crossmintFormData
+      body: JSON.stringify(crossmintPayload)
     });
 
     if (!res.ok) {

@@ -141,7 +141,7 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
     } catch (err) {
       console.error(err)
       setRegistering(false)
-      alert("Failed to register IP via Crossmint native IPFS.")
+      alert(err instanceof Error ? err.message : "Failed to register IP via Crossmint.")
     }
   }
 
