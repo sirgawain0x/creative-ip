@@ -20,19 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { graphQLClient, GET_USER_IP_ASSETS, mapSubgraphAssetToIPAsset } from '@/lib/graphql'
 
-const STATS = [
-  { label: 'Total IP Assets', value: '3', delta: '+1 this month', icon: Layers, glow: false },
-  { label: 'Active Licenses', value: '48', delta: '+12 this week', icon: Activity, glow: false },
-  { label: 'Total Revenue', value: '16,260 USDC', delta: '+2,400 USDC', icon: DollarSign, glow: true },
-  { label: 'Total Views', value: '15.4K', delta: '+2.1K this week', icon: Eye, glow: false },
-]
-
-const RECENT_ACTIVITY = [
-  { action: 'Commercial License purchased', asset: 'Neon Genesis Overture', by: '@studio_x', time: '2h ago', amount: '250 USDC' },
-  { action: 'Remix License purchased', asset: 'Chrome Horizon #001', by: '@artremix_dao', time: '5h ago', amount: '3,600 USDC' },
-  { action: 'IP Registered', asset: 'Chrome Horizon #001', by: 'You', time: '12h ago', amount: null },
-  { action: 'Personal License purchased', asset: 'The Quiet Algorithm', by: '@reader_99', time: '1d ago', amount: '25 USDC' },
-]
+const RECENT_ACTIVITY: { action: string, asset: string, by: string, time: string, amount: string | null }[] = [] // Empty activity stream for production MVP
 
 export function Launchpad() {
   const [wizardOpen, setWizardOpen] = useState(false)
@@ -50,7 +38,8 @@ export function Launchpad() {
       setLoading(true)
       try {
         const data: any = await graphQLClient.request(GET_USER_IP_ASSETS, {
-          owner: wallet.address.toLowerCase()
+          first: 10,
+          skip: 0
         })
         if (data.ipregistereds) {
           const assets = await Promise.all(
@@ -106,7 +95,12 @@ export function Launchpad() {
           <>
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {STATS.map(({ label, value, delta, icon: Icon, glow }) => (
+          {[
+            { label: 'Total IP Assets', value: myPortfolio.length.toString(), delta: '+0 this month', icon: Layers, glow: false },
+            { label: 'Active Licenses', value: myPortfolio.reduce((acc, curr) => acc + curr.stats.licenses, 0).toString(), delta: '+0 this week', icon: Activity, glow: false },
+            { label: 'Total Revenue', value: `${myPortfolio.reduce((acc, curr) => acc + curr.stats.revenue, 0).toLocaleString()} USDC`, delta: '+0 USDC', icon: DollarSign, glow: true },
+            { label: 'Total Views', value: myPortfolio.reduce((acc, curr) => acc + curr.stats.views, 0).toLocaleString(), delta: '+0 this week', icon: Eye, glow: false },
+          ].map(({ label, value, delta, icon: Icon, glow }) => (
             <div
               key={label}
               className={cn(
