@@ -44,7 +44,9 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
   const [registering, setRegistering] = useState(false)
   const [done, setDone] = useState(false)
   const [file, setFile] = useState<File | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isDraggingCover, setIsDraggingCover] = useState(false)
   const [createdId, setCreatedId] = useState('')
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -71,6 +73,17 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
     }
   }
 
+  // Cover Image Handlers
+  const handleCoverDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDraggingCover(true); }
+  const handleCoverDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDraggingCover(false); }
+  const handleCoverDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setIsDraggingCover(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { setCoverFile(e.dataTransfer.files[0]); }
+  }
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) { setCoverFile(e.target.files[0]); }
+  }
+
   const TOTAL_STEPS = 3
 
   const toggleLicense = (lic: string) => {
@@ -83,8 +96,6 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
     setRegistering(true)
     
     try {
-      let imageUri = type === 'image' ? '/images/art-1.jpg' : type === 'music' ? '/images/music-1.jpg' : '/images/lit-1.jpg'
-
       const formData = new FormData()
       formData.append('title', title || 'Untitled')
       formData.append('description', description || '')
@@ -92,11 +103,9 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
       formData.append('royalty', royalty)
       formData.append('licenses', licenses.join(', '))
       formData.append('owner', wallet?.address || 'email:test@example.com:story-testnet')
-      formData.append('imageUri', imageUri)
       
-      if (file) {
-        formData.append('file', file)
-      }
+      if (file) { formData.append('mediaFile', file) }
+      if (coverFile) { formData.append('coverFile', coverFile) }
 
       // Execute actual smart contract IP registration via Crossmint Server API route
       const registerRes = await fetch('/api/register-ip', {
@@ -126,7 +135,7 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
           creator: 'You',
           creatorHandle: '@creator',
           type: (type as any) || 'music',
-          coverImage: imageUri,
+          coverImage: registerData?.nftMetadata?.image || '/images/art-1.jpg',
           description: description || '',
           licenses: licenses as any,
           price: 0,
@@ -237,62 +246,118 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
                     className="bg-input border-border/60 font-mono text-sm focus:border-primary/60"
                   />
                 </div>
+                {/* Cover Image upload */}
+                <div>
+                    <label className="font-mono text-[10px] text-muted-foreground block mb-1.5">Cover Image Art</label>
+                    <div 
+                      className={cn(
+                        "border-2 border-dashed rounded-xl p-4 text-center transition-colors group",
+                        isDraggingCover ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/30"
+                      )}
+                      onDragOver={handleCoverDragOver}
+                      onDragLeave={handleCoverDragLeave}
+                      onDrop={handleCoverDrop}
+                    >
+                      <input 
+                        type="file" 
+                        id="cover-upload" 
+                        className="hidden" 
+                        onChange={handleCoverFileChange}
+                        accept="image/*"
+                      />
+                      {!coverFile ? (
+                        <label htmlFor="cover-upload" className="cursor-pointer block">
+                          <ImageIcon className={cn(
+                            "w-5 h-5 mx-auto mb-1 transition-colors",
+                             isDraggingCover ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                          )} />
+                          <p className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                            Drop cover image here or <span className="text-primary underline">browse</span>
+                          </p>
+                          <p className="font-mono text-[9px] text-muted-foreground/60 mt-1">
+                            PNG, JPG, WEBP — max 10MB
+                          </p>
+                        </label>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                           <CheckCircle2 className="w-5 h-5 text-primary" />
+                           <p className="font-mono text-[10px] text-foreground bg-secondary/30 px-2 py-1 rounded truncate max-w-[200px]">
+                             {coverFile.name}
+                           </p>
+                           <button 
+                             onClick={() => setCoverFile(null)}
+                             className="font-mono text-[9px] text-destructive hover:underline"
+                           >
+                             Remove
+                           </button>
+                        </div>
+                      )}
+                    </div>
+                </div>
+
                 <div>
                   <label className="font-mono text-[10px] text-muted-foreground block mb-1.5">Description</label>
                   <textarea
                     placeholder="Describe your work…"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
+                    rows={2}
                     className="w-full bg-input border border-border/60 rounded-md px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 resize-none"
                   />
                 </div>
 
-                {/* File upload */}
-                <div 
-                  className={cn(
-                    "border-2 border-dashed rounded-xl p-6 text-center transition-colors group",
-                    isDragging ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/30"
-                  )}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  <input 
-                    type="file" 
-                    id="file-upload" 
-                    className="hidden" 
-                    onChange={handleFileChange}
-                    accept="audio/*,image/*,.pdf,.epub"
-                  />
-                  {!file ? (
-                    <label htmlFor="file-upload" className="cursor-pointer block">
-                      <Upload className={cn(
-                        "w-6 h-6 mx-auto mb-2 transition-colors",
-                         isDragging ? "text-primary" : "text-muted-foreground group-hover:text-primary"
-                      )} />
-                      <p className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                        Drop your file here or <span className="text-primary underline">browse</span>
-                      </p>
-                      <p className="font-mono text-[9px] text-muted-foreground/60 mt-1">
-                        MP3, WAV, PDF, EPUB, PNG, JPG — max 500MB
-                      </p>
+                {/* Media File upload (Only for Music and Lit) */}
+                {type !== 'image' && (
+                <div>
+                    <label className="font-mono text-[10px] text-muted-foreground block mb-1.5">
+                       {type === 'music' ? 'Audio Track (MP3/WAV)' : 'Literature File (PDF/EPUB)'} 
                     </label>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                       <CheckCircle2 className="w-6 h-6 text-primary" />
-                       <p className="font-mono text-xs text-foreground bg-secondary/30 px-3 py-1.5 rounded truncate max-w-[200px]">
-                         {file.name}
-                       </p>
-                       <button 
-                         onClick={() => setFile(null)}
-                         className="font-mono text-[10px] text-destructive hover:underline"
-                       >
-                         Remove
-                       </button>
+                    <div 
+                      className={cn(
+                        "border-2 border-dashed rounded-xl p-4 text-center transition-colors group",
+                        isDragging ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/30"
+                      )}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      <input 
+                        type="file" 
+                        id="file-upload" 
+                        className="hidden" 
+                        onChange={handleFileChange}
+                        accept={type === 'music' ? "audio/*" : ".pdf,.epub"}
+                      />
+                      {!file ? (
+                        <label htmlFor="file-upload" className="cursor-pointer block">
+                          <Upload className={cn(
+                            "w-5 h-5 mx-auto mb-1 transition-colors",
+                             isDragging ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                          )} />
+                          <p className="font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                            Drop your file here or <span className="text-primary underline">browse</span>
+                          </p>
+                          <p className="font-mono text-[9px] text-muted-foreground/60 mt-1">
+                            {type === 'music' ? 'MP3, WAV — max 50MB' : 'PDF, EPUB — max 50MB'}
+                          </p>
+                        </label>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                           <CheckCircle2 className="w-5 h-5 text-primary" />
+                           <p className="font-mono text-[10px] text-foreground bg-secondary/30 px-2 py-1 rounded truncate max-w-[200px]">
+                             {file.name}
+                           </p>
+                           <button 
+                             onClick={() => setFile(null)}
+                             className="font-mono text-[9px] text-destructive hover:underline"
+                           >
+                             Remove
+                           </button>
+                        </div>
+                      )}
                     </div>
-                  )}
                 </div>
+                )}
               </div>
 
               <div className="flex gap-2">
