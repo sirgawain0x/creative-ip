@@ -20,11 +20,20 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Missing owner address' }, { status: 400 });
     }
 
-    const CROSSMINT_BASE_URL = "https://staging.crossmint.com/api";
+    const serverKey = process.env.CROSSMINT_SERVER_KEY;
+    if (!serverKey) {
+        throw new Error("Missing CROSSMINT_SERVER_KEY in environment variables. Have you added this to Vercel?");
+    }
+
+    // Automatically route to staging or production based on the key prefix
+    const CROSSMINT_BASE_URL = serverKey.startsWith("sk_live_") 
+      ? "https://www.crossmint.com/api" 
+      : "https://staging.crossmint.com/api";
+
     const collectionId = process.env.COLLECTION_ID;
     
     if (!collectionId) {
-        throw new Error("Missing COLLECTION_ID in environment variables");
+        throw new Error("Missing COLLECTION_ID in environment variables. Have you added this to Vercel?");
     }
 
     // Use dummy public URLs for the example
@@ -77,11 +86,17 @@ export async function POST(req: Request) {
     const res = await fetch(`${CROSSMINT_BASE_URL}/v1/ip/collections/${collectionId}/ipassets`, {
       method: "POST",
       headers: {
-        "X-API-KEY": process.env.CROSSMINT_SERVER_KEY || "",
+        "X-API-KEY": serverKey,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(crossmintPayload)
     });
+
+    if (res.status === 403) {
+        return NextResponse.json({ 
+            error: `Crossmint API Error: Forbidden. Please ensure your CROSSMINT_SERVER_KEY is set in your Vercel Environment Variables and has the 'nfts.create' and 'collection.create' scopes.` 
+        }, { status: 403 });
+    }
 
     if (!res.ok) {
         const errObj = await res.json().catch(() => ({}));
