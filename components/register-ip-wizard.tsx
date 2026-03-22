@@ -96,29 +96,70 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
     setRegistering(true)
     
     try {
-      const formData = new FormData()
-      formData.append('title', title || 'Untitled')
-      formData.append('description', description || '')
-      formData.append('ipType', type || 'music')
-      formData.append('royalty', royalty)
-      formData.append('licenses', licenses.join(', '))
-      formData.append('owner', wallet?.address || 'email:test@example.com:story-testnet')
-      
-      if (file) { formData.append('mediaFile', file) }
-      if (coverFile) { formData.append('coverFile', coverFile) }
+      let finalMediaUrl = ""; // Default to empty, will be set if file is uploaded
+      let finalImageUrl = ""; // Default to empty, will be set if coverFile is uploaded
 
-      // Execute actual smart contract IP registration via Crossmint Server API route
-      const registerRes = await fetch('/api/register-ip', {
-        method: 'POST',
-        body: formData
+      // 1. Upload Media File directly to S3 via Presigned URL
+      if (file) {
+        const presignRes = await fetch('/api/presign-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: file.name, contentType: file.type })
+        });
+        const { uploadUrl, downloadUrl } = await presignRes.json();
+        
+        // Native browser-to-S3 bypasses 4.5MB Vercel restrictions
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file
+        });
+        finalMediaUrl = downloadUrl;
+      }
+
+      // 2. Upload Cover File directly to S3 via Presigned URL
+      if (coverFile) {
+        const presignRes = await fetch('/api/presign-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: coverFile.name, contentType: coverFile.type })
+        });
+        const { uploadUrl, downloadUrl } = await presignRes.json();
+        
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': coverFile.type },
+          body: coverFile
+        });
+        finalImageUrl = downloadUrl;
+      } else if (type === 'image' && file) {
+        finalImageUrl = finalMediaUrl; // Fallback, the standard media file acts as the cover art if visual
+      }
+
+      // 3. Register IP via API with standard JSON
+      const payload = {
+        title: title || 'Untitled',
+        description: description || '',
+        ipType: type || 'music',
+        royalty,
+        licenses: licenses.join(', '),
+        owner: wallet?.address || 'email:test@example.com:story-testnet',
+        mediaUrl: finalMediaUrl,
+        imageUrl: finalImageUrl
+      };
+
+      let res = await fetch("/api/register-ip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
-
-      if (!registerRes.ok) {
-        const errData = await registerRes.json().catch(()=>({}));
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(()=>({}));
         throw new Error(errData.error || "Failed to register via Crossmint API");
       }
 
-      const registerData = await registerRes.json();
+      const registerData = await res.json();
       console.log('Crossmint Registration Data:', registerData);
       
       const newMockId = registerData.onChain?.ipAssetId || registerData.id || `IP-0x${Math.random().toString(16).slice(2, 10).toUpperCase()}…`

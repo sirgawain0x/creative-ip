@@ -1,21 +1,20 @@
 import { NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
+    const dataObj = await req.json();
     
-    const title = formData.get('title') as string || 'Untitled';
-    const description = formData.get('description') as string || '';
-    const ipType = formData.get('ipType') as string || 'music';
-    const owner = formData.get('owner') as string;
-    const baseContractAddress = formData.get('baseContractAddress') as string || '';
-    const baseTokenId = formData.get('baseTokenId') as string || '';
-    const mediaFile = formData.get('mediaFile') as File | null;
-    const coverFile = formData.get('coverFile') as File | null;
-
-    const licenses = formData.get('licenses') as string || '';
-    const royalty = formData.get('royalty') as string || '10';
+    const title = dataObj.title || 'Untitled';
+    const description = dataObj.description || '';
+    const ipType = dataObj.ipType || 'music';
+    const owner = dataObj.owner;
+    
+    // Extracted from frontend presigned URL logic
+    const finalMediaUrl = dataObj.mediaUrl || "https://cdn1.suno.ai/c001fd6e-d6cd-474f-a7b6-6e6a9b3e2515.mp3";
+    const finalImageUrl = dataObj.imageUrl || "https://cdn2.suno.ai/image_large_c001fd6e-d6cd-474f-a7b6-6e6a9b3e2515.jpeg";
+    
+    const licenses = dataObj.licenses || '';
+    const royalty = dataObj.royalty || '10';
 
     if (!owner) {
         return NextResponse.json({ error: 'Missing owner address' }, { status: 400 });
@@ -35,66 +34,6 @@ export async function POST(req: Request) {
     
     if (!COLLECTION_ID) {
         throw new Error("Missing COLLECTION_ID in environment variables. Have you added this to Vercel?");
-    }
-
-    // Helper to upload a File blob to Mega S4 and return the public URL
-    async function uploadToS3(uploadFile: File): Promise<string | null> {
-        try {
-            const s3Client = new S3Client({
-                endpoint: process.env.MEGA_S4_ENDPOINT,
-                region: process.env.MEGA_S4_REGION || "ca-central-1",
-                credentials: {
-                    accessKeyId: process.env.MEGA_S4_ACCESS_KEY!,
-                    secretAccessKey: process.env.MEGA_S4_SECRET_KEY!
-                },
-                forcePathStyle: true
-            });
-
-            const arrayBuffer = await uploadFile.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            const bucketName = process.env.MEGA_S4_BUCKET || "creative-tv-ddex-inbox";
-            const filename = `ip-assets/${Date.now()}-${uploadFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-
-            const command = new PutObjectCommand({
-                Bucket: bucketName,
-                Key: filename,
-                Body: buffer,
-                ContentType: uploadFile.type || "application/octet-stream",
-                ACL: "public-read"
-            });
-
-            await s3Client.send(command);
-            
-            // Generate a presigned URL valid for 2 hours (7200 seconds) so Crossmint can securely index it
-            const getCommand = new GetObjectCommand({
-                Bucket: bucketName,
-                Key: filename
-            });
-            const presignedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 7200 });
-            
-            console.log("Successfully uploaded to Mega S4, presigned URL:", presignedUrl);
-            return presignedUrl;
-        } catch (error) {
-            console.error("Mega S4 Upload Error:", error);
-            return null;
-        }
-    }
-
-    // Use dummy public URLs for the example fallback
-    let finalImageUrl = "https://cdn2.suno.ai/image_large_c001fd6e-d6cd-474f-a7b6-6e6a9b3e2515.jpeg";
-    let finalMediaUrl = "https://cdn1.suno.ai/c001fd6e-d6cd-474f-a7b6-6e6a9b3e2515.mp3";
-
-    if (mediaFile && mediaFile.size > 0 && mediaFile.name) {
-        const uploadedMedia = await uploadToS3(mediaFile);
-        if (uploadedMedia) finalMediaUrl = uploadedMedia;
-    }
-
-    if (coverFile && coverFile.size > 0 && coverFile.name) {
-        const uploadedCover = await uploadToS3(coverFile);
-        if (uploadedCover) finalImageUrl = uploadedCover;
-    } else if (ipType === 'image' && mediaFile) {
-        // If it's an image IP and no separate cover was uploaded, the media itself IS the cover
-        finalImageUrl = finalMediaUrl;
     }
 
     const MOCK_LIT_URL = "https://example.com/book.epub";
@@ -119,15 +58,6 @@ export async function POST(req: Request) {
         { key: 'Licenses', value: licenses },
         { key: 'RoyaltyRate', value: royalty }
     ];
-
-    if (baseContractAddress) {
-        attributes.push({ key: 'Original Chain', value: 'Base' });
-        attributes.push({ key: 'Base Contract Address', value: baseContractAddress });
-    }
-    
-    if (baseTokenId) {
-        attributes.push({ key: 'Base Token ID', value: baseTokenId });
-    }
 
     // Fix EVM wallet address formatting for Crossmint Locators
     let finalOwnerLocator = owner;
