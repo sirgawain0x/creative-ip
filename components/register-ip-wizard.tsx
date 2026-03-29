@@ -106,14 +106,21 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ filename: file.name, contentType: file.type })
         });
+        if (!presignRes.ok) {
+          const err = await presignRes.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to get upload URL for media file');
+        }
         const { uploadUrl, downloadUrl } = await presignRes.json();
-        
+
         // Native browser-to-S3 bypasses 4.5MB Vercel restrictions
-        await fetch(uploadUrl, {
+        const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': file.type },
           body: file
         });
+        if (!uploadRes.ok) {
+          throw new Error(`Media file upload failed (${uploadRes.status})`);
+        }
         finalMediaUrl = downloadUrl;
       }
 
@@ -124,13 +131,20 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ filename: coverFile.name, contentType: coverFile.type })
         });
+        if (!presignRes.ok) {
+          const err = await presignRes.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to get upload URL for cover image');
+        }
         const { uploadUrl, downloadUrl } = await presignRes.json();
-        
-        await fetch(uploadUrl, {
+
+        const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': coverFile.type },
           body: coverFile
         });
+        if (!uploadRes.ok) {
+          throw new Error(`Cover image upload failed (${uploadRes.status})`);
+        }
         finalImageUrl = downloadUrl;
       } else if (type === 'image' && file) {
         finalImageUrl = finalMediaUrl; // Fallback, the standard media file acts as the cover art if visual
