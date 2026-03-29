@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export async function POST(req: Request) {
@@ -10,8 +10,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing filename or contentType' }, { status: 400 });
     }
 
+    const endpoint = process.env.MEGA_S4_ENDPOINT;
+    if (!endpoint) {
+      return NextResponse.json({ error: 'Storage endpoint not configured' }, { status: 500 });
+    }
+
     const s3Client = new S3Client({
-      endpoint: process.env.MEGA_S4_ENDPOINT,
+      endpoint,
       region: process.env.MEGA_S4_REGION || "ca-central-1",
       credentials: {
         accessKeyId: process.env.MEGA_S4_ACCESS_KEY!,
@@ -32,12 +37,10 @@ export async function POST(req: Request) {
     });
     const uploadUrl = await getSignedUrl(s3Client, putCommand, { expiresIn: 3600 });
 
-    // Generate GET URL for Crossmint to securely index the file after upload (2-hour limit)
-    const getCommand = new GetObjectCommand({
-      Bucket: bucketName,
-      Key: safeFilename
-    });
-    const downloadUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 7200 });
+    // Build a permanent public URL since the object ACL is public-read.
+    // Presigned GET URLs expired after 2 hours, causing assets to stop rendering.
+    const normalizedEndpoint = endpoint.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
+    const downloadUrl = `${normalizedEndpoint}/${bucketName}/${safeFilename}`;
 
     return NextResponse.json({ uploadUrl, downloadUrl });
   } catch (error: any) {
