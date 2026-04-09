@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const isMusic = ipType === 'music';
     const isLit = ipType === 'literature';
 
-    const mediaUrl = isMusic ? finalMediaUrl : isLit ? finalMediaUrl : finalMediaUrl;
+    const mediaUrl = finalMediaUrl;
     const mediaType = isMusic ? 'audio/mpeg' : isLit ? 'application/epub+zip' : 'image/jpeg';
 
     const nftMetadata: any = {
@@ -53,15 +53,11 @@ export async function POST(req: Request) {
         { key: 'RoyaltyRate', value: royalty }
     ];
 
-    // Fix EVM wallet address formatting for Crossmint Locators
+    // Format owner as Crossmint locator for Story network
     let finalOwnerLocator = owner;
-    let creatorAddress = owner;
 
     if (owner.startsWith('0x')) {
         finalOwnerLocator = `story-testnet:${owner}`;
-        creatorAddress = owner;
-    } else if (owner.startsWith('story-testnet:')) {
-        creatorAddress = owner.replace('story-testnet:', '');
     }
 
     // Build ipAssetMetadata matching Crossmint Music Quickstart docs
