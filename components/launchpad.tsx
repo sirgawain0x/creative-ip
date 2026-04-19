@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
+import { useAccount } from 'wagmi'
+import { useAppKit } from '@reown/appkit/react'
 import { IPAsset } from '@/lib/data'
 import { IPCard } from './ip-card'
 import { RegisterIPWizard } from './register-ip-wizard'
@@ -26,12 +27,12 @@ export function Launchpad() {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [myPortfolio, setMyPortfolio] = useState<IPAsset[]>([])
   const [loading, setLoading] = useState(true)
-  const { status, wallet } = useWallet()
-  const { login } = useAuth()
+  const { address, isConnected } = useAccount()
+  const { open } = useAppKit()
 
   useEffect(() => {
     async function fetchUserAssets() {
-      if (status !== 'loaded' || !wallet?.address) {
+      if (!isConnected || !address) {
         setLoading(false)
         return
       }
@@ -54,11 +55,11 @@ export function Launchpad() {
       }
     }
     fetchUserAssets()
-  }, [status, wallet?.address])
+  }, [isConnected, address])
 
   const handleRegisterClick = () => {
-    if (status !== 'loaded') {
-      if (login) login()
+    if (!isConnected) {
+      open()
     } else {
       setWizardOpen(true)
     }
@@ -91,7 +92,7 @@ export function Launchpad() {
           </Button>
         </div>
 
-        {status === 'loaded' && wallet ? (
+        {isConnected && address ? (
           <>
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -218,7 +219,7 @@ export function Launchpad() {
             </div>
             <Button
               className="bg-primary text-primary-foreground font-semibold text-xs mt-2"
-              onClick={() => { if (login) login() }}
+              onClick={() => open()}
             >
               Connect Wallet
             </Button>
