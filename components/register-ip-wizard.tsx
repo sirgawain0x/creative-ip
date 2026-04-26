@@ -207,7 +207,7 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
       // Gas sponsorship happens automatically via gasManagerConfig.policyId in the Account Kit
       // config (NEXT_PUBLIC_STORY_POLICY_ID).
       const storyClient = StoryClient.newClient({
-        wallet: smartAccountClient as never,
+        wallet: smartAccountClient as unknown as Parameters<typeof StoryClient.newClient>[0]['wallet'],
         transport: http(storyRpc),
         chainId: getStoryChainId(),
       })
