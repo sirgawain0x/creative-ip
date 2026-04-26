@@ -9,9 +9,12 @@ import { getStoryChain } from "@/lib/sdk/story/chains"
 
 const storyChain = getStoryChain()
 
-const transport = alchemy({
-  apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
-})
+const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+if (!apiKey) {
+  throw new Error("NEXT_PUBLIC_ALCHEMY_API_KEY is not defined")
+}
+
+const transport = alchemy({ apiKey })
 
 const customStorage = () => ({
   getItem: (key: string) => {
@@ -36,9 +39,10 @@ const customStorage = () => ({
     const isHttps =
       typeof window !== "undefined" && window.location?.protocol === "https:"
     for (const cookie of document.cookie.split(";")) {
-      const eqPos = cookie.indexOf("=")
-      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie
-      document.cookie = `${name}=; max-age=0; path=/; SameSite=Lax${isHttps ? "; Secure" : ""}`
+      const name = cookie.split("=")[0].trim()
+      if (name) {
+        document.cookie = `${name}=; max-age=0; path=/; SameSite=Lax${isHttps ? "; Secure" : ""}`
+      }
     }
   },
   length: 0,
