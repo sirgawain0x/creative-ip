@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { IPAsset } from '@/lib/data'
-import { useAccount, useWalletClient } from 'wagmi'
-import { custom, parseEther, type Address } from 'viem'
+import { useUser, useSmartAccountClient } from '@account-kit/react'
+import { http, parseEther, type Address } from 'viem'
 import { StoryClient, PILFlavor, WIP_TOKEN_ADDRESS } from '@story-protocol/core-sdk'
+import { getStoryChain, getStoryChainId } from '@/lib/sdk/story/chains'
 import {
   Music,
   BookOpen,
@@ -36,8 +37,10 @@ interface RegisterIPWizardProps {
 }
 
 export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: RegisterIPWizardProps) {
-  const { address, isConnected } = useAccount()
-  const { data: walletClient } = useWalletClient()
+  const user = useUser()
+  const address = user?.address as Address | undefined
+  const isConnected = !!user
+  const { client: smartAccountClient } = useSmartAccountClient({})
   const [step, setStep] = useState(1)
   const [type, setType] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -135,7 +138,7 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
   }
 
   const handleRegister = async () => {
-    if (!walletClient || !address) {
+    if (!smartAccountClient || !address) {
       alert('Connect your wallet first.')
       return
     }
@@ -196,10 +199,17 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
         uploadMetadata(nftMetadata, 'nft'),
       ])
 
+      const storyChain = getStoryChain()
+      const storyRpc = storyChain.rpcUrls.default.http[0] as string
+
+      // Pass the Account Kit SmartAccountClient as the wallet — Story SDK calls it as a viem
+      // WalletClient, which under the hood dispatches UserOperations through the bundler.
+      // Gas sponsorship happens automatically via gasManagerConfig.policyId in the Account Kit
+      // config (NEXT_PUBLIC_STORY_POLICY_ID).
       const storyClient = StoryClient.newClient({
-        wallet: walletClient,
-        transport: custom(walletClient.transport),
-        chainId: process.env.NODE_ENV === 'production' ? 'mainnet' : 'aeneid',
+        wallet: smartAccountClient as never,
+        transport: http(storyRpc),
+        chainId: getStoryChainId(),
       })
 
       const royaltyShare = Math.max(0, Math.min(100, Number(royalty) || 0))

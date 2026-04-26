@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAccount } from 'wagmi'
-import { useAppKit } from '@reown/appkit/react'
+import { useUser, useAuthModal } from '@account-kit/react'
 import { IPAsset } from '@/lib/data'
 import { IPCard } from './ip-card'
 import { RegisterIPWizard } from './register-ip-wizard'
@@ -27,8 +26,10 @@ export function Launchpad() {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [myPortfolio, setMyPortfolio] = useState<IPAsset[]>([])
   const [loading, setLoading] = useState(true)
-  const { address, isConnected } = useAccount()
-  const { open } = useAppKit()
+  const user = useUser()
+  const address = user?.address
+  const isConnected = !!user
+  const { openAuthModal } = useAuthModal()
 
   useEffect(() => {
     async function fetchUserAssets() {
@@ -59,7 +60,7 @@ export function Launchpad() {
 
   const handleRegisterClick = () => {
     if (!isConnected) {
-      open()
+      openAuthModal()
     } else {
       setWizardOpen(true)
     }
@@ -219,7 +220,7 @@ export function Launchpad() {
             </div>
             <Button
               className="bg-primary text-primary-foreground font-semibold text-xs mt-2"
-              onClick={() => open()}
+              onClick={() => openAuthModal()}
             >
               Connect Wallet
             </Button>

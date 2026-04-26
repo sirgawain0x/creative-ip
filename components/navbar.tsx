@@ -15,8 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useAccount, useDisconnect } from 'wagmi'
-import { useAppKit } from '@reown/appkit/react'
+import { useUser, useAuthModal, useLogout } from '@account-kit/react'
 
 const NAV_LINKS = [
   { href: '/', label: 'Exchange' },
@@ -26,9 +25,11 @@ const NAV_LINKS = [
 export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { address, isConnected } = useAccount()
-  const { disconnect } = useDisconnect()
-  const { open } = useAppKit()
+  const user = useUser()
+  const address = user?.address
+  const isConnected = !!user
+  const { logout } = useLogout()
+  const { openAuthModal } = useAuthModal()
   const [isOnrampLoading, setIsOnrampLoading] = useState(false)
 
   const handleBuyUSDC = async () => {
@@ -140,7 +141,7 @@ export function Navbar() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-border/60" />
                   <DropdownMenuItem
-                    onClick={() => disconnect()}
+                    onClick={() => logout()}
                     className="font-mono text-xs text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
@@ -154,7 +155,7 @@ export function Navbar() {
               <Button
                 size="sm"
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs glow-primary hidden md:flex"
-                onClick={() => open()}
+                onClick={() => openAuthModal()}
               >
                 Get Started
               </Button>
@@ -213,7 +214,7 @@ export function Navbar() {
                   <Button
                     variant="ghost"
                     className="w-full font-mono text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
-                    onClick={() => { disconnect(); setMobileOpen(false) }}
+                    onClick={() => { logout(); setMobileOpen(false) }}
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Disconnect
@@ -222,7 +223,7 @@ export function Navbar() {
               ) : (
                 <Button
                   className="w-full bg-primary text-primary-foreground font-semibold text-xs"
-                  onClick={() => { open(); setMobileOpen(false) }}
+                  onClick={() => { openAuthModal(); setMobileOpen(false) }}
                 >
                   Get Started
                 </Button>

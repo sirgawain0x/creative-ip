@@ -8,8 +8,7 @@ import { type IPAsset } from '@/lib/data'
 import { Button } from './ui/button'
 import { BuyLicenseModal } from './buy-license-modal'
 import { useState } from 'react'
-import { useAccount } from 'wagmi'
-import { useAppKit } from '@reown/appkit/react'
+import { useUser, useAuthModal } from '@account-kit/react'
 
 const TYPE_ICON = {
   music: Music,
@@ -46,8 +45,8 @@ interface IPCardProps {
 
 export function IPCard({ asset, className }: IPCardProps) {
   const [buyOpen, setBuyOpen] = useState(false)
-  const { isConnected } = useAccount()
-  const { open } = useAppKit()
+  const isConnected = !!useUser()
+  const { openAuthModal } = useAuthModal()
   const Icon = TYPE_ICON[asset.type]
 
   return (
@@ -133,7 +132,7 @@ export function IPCard({ asset, className }: IPCardProps) {
                 if (isConnected) {
                   setBuyOpen(true)
                 } else {
-                  open()
+                  openAuthModal()
                 }
               }}
             >

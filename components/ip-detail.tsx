@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation'
 import { type IPAsset } from '@/lib/data'
 import { BuyLicenseModal } from './buy-license-modal'
 import { Button } from './ui/button'
-import { useAccount } from 'wagmi'
-import { useAppKit } from '@reown/appkit/react'
+import { useUser, useAuthModal } from '@account-kit/react'
 import { cn } from '@/lib/utils'
 import {
   Music,
@@ -48,8 +47,8 @@ export function IPDetail({ asset }: IPDetailProps) {
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [imageZoom, setImageZoom] = useState(false)
-  const { isConnected } = useAccount()
-  const { open } = useAppKit()
+  const isConnected = !!useUser()
+  const { openAuthModal } = useAuthModal()
 
   const progressRef = useRef<HTMLDivElement>(null)
 
@@ -295,7 +294,7 @@ export function IPDetail({ asset }: IPDetailProps) {
                   if (isConnected) {
                     setBuyOpen(true)
                   } else {
-                    open()
+                    openAuthModal()
                   }
                 }}
               >
