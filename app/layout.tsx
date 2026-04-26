@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Playfair_Display, Space_Mono } from 'next/font/google'
 import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'
+import { cookieToInitialState } from '@account-kit/core'
+import { config } from '@/config'
 import './globals.css'
 import Providers from './providers'
 
@@ -40,12 +42,12 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const headersObj = await headers()
-  const cookies = headersObj.get('cookie')
+  const initialState = cookieToInitialState(config, headersObj.get('cookie') ?? undefined)
 
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${playfair.variable} ${spaceMono.variable} font-sans antialiased`}>
-        <Providers cookies={cookies}>
+        <Providers initialState={initialState}>
           {children}
           <Analytics />
         </Providers>
