@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Playfair_Display, Space_Mono } from 'next/font/google'
+import { headers } from 'next/headers'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import Providers from './providers'
@@ -33,15 +34,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const headersObj = await headers()
+  const cookies = headersObj.get('cookie')
+
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${playfair.variable} ${spaceMono.variable} font-sans antialiased`}>
-        <Providers>
+        <Providers cookies={cookies}>
           {children}
           <Analytics />
         </Providers>
