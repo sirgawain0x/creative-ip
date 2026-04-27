@@ -123,10 +123,10 @@ export function IPCard({ asset, className }: IPCardProps) {
             <Button
               size="sm"
               className={cn(
-                "font-mono text-[10px] transition-all gap-1",
+                "rounded-xl border font-mono text-[10px] transition-all gap-1 hover:-translate-y-0.5",
                 isConnected
-                  ? "bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30"
-                  : "bg-secondary/50 text-foreground border border-border/60 hover:bg-secondary"
+                  ? "border-primary/70 !bg-transparent !text-primary hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/35"
+                  : "border-primary/45 !bg-transparent text-primary hover:border-[#EC407A] hover:!bg-primary/10 hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/30"
               )}
               onClick={() => {
                 if (isConnected) {

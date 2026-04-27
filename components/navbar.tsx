@@ -84,10 +84,10 @@ export function Navbar() {
                 key={href}
                 href={href}
                 className={cn(
-                  'font-mono text-xs uppercase tracking-widest px-4 py-2 rounded transition-all',
+                  'rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-widest transition-all',
                   pathname === href
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    ? 'bg-primary/15 text-primary shadow-sm shadow-primary/10'
+                    : 'text-muted-foreground hover:-translate-y-0.5 hover:bg-primary/10 hover:text-primary'
                 )}
               >
                 {label}
@@ -106,7 +106,7 @@ export function Navbar() {
             {isConnected && address ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="hidden md:flex items-center gap-2 bg-secondary/50 border border-border/60 px-3 py-1.5 rounded-full hover:bg-secondary/70 transition-colors cursor-pointer outline-none">
+                  <button className="hidden cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 md:flex">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="font-mono text-[10px] text-foreground">
                       {address.slice(0, 6)}...{address.slice(-4)}
@@ -129,7 +129,7 @@ export function Navbar() {
                     onClick={handleBuyUSDC}
                     disabled={isOnrampLoading}
                     className={cn(
-                      "font-mono text-xs cursor-pointer text-primary focus:text-primary focus:bg-primary/10 flex items-center justify-between w-full",
+                      "flex w-full cursor-pointer items-center justify-between font-mono text-xs text-primary transition-colors hover:bg-primary/10 focus:bg-primary/10 focus:text-primary",
                       isOnrampLoading && "opacity-50 cursor-not-allowed"
                     )}
                   >
@@ -142,7 +142,7 @@ export function Navbar() {
                   <DropdownMenuSeparator className="bg-border/60" />
                   <DropdownMenuItem
                     onClick={() => logout()}
-                    className="font-mono text-xs text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                    className="cursor-pointer font-mono text-xs text-destructive transition-colors hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive"
                   >
                     <div className="flex items-center gap-2">
                       <LogOut className="w-3.5 h-3.5" />
@@ -154,7 +154,7 @@ export function Navbar() {
             ) : (
               <Button
                 size="sm"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs glow-primary hidden md:flex"
+                className="hidden rounded-xl border border-primary/70 !bg-transparent px-4 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40 md:flex"
                 onClick={() => openAuthModal()}
               >
                 Get Started
@@ -163,7 +163,7 @@ export function Navbar() {
 
             {/* Mobile menu toggle */}
             <button
-              className="md:hidden text-muted-foreground hover:text-foreground p-1"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 md:hidden"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -180,10 +180,10 @@ export function Navbar() {
                 key={href}
                 href={href}
                 className={cn(
-                  'block font-mono text-xs uppercase tracking-widest px-4 py-3 rounded transition-all',
+                  'block rounded-xl px-4 py-3 font-mono text-xs uppercase tracking-widest transition-all',
                   pathname === href
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                 )}
                 onClick={() => setMobileOpen(false)}
               >
@@ -204,7 +204,7 @@ export function Navbar() {
                   </div>
                   <Button
                     variant="outline"
-                    className="w-full font-mono text-xs border-primary/20 text-primary hover:bg-primary/10 gap-2"
+                    className="w-full rounded-xl border-primary/30 font-mono text-xs text-primary transition-all hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/10 gap-2"
                     onClick={handleBuyUSDC}
                     disabled={isOnrampLoading}
                   >
@@ -213,7 +213,7 @@ export function Navbar() {
                   </Button>
                   <Button
                     variant="ghost"
-                    className="w-full font-mono text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
+                    className="w-full rounded-xl font-mono text-xs text-destructive transition-all hover:bg-destructive/10 hover:text-destructive gap-2"
                     onClick={() => { logout(); setMobileOpen(false) }}
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -222,7 +222,7 @@ export function Navbar() {
                 </div>
               ) : (
                 <Button
-                  className="w-full bg-primary text-primary-foreground font-semibold text-xs"
+                  className="!h-11 w-full rounded-xl border border-primary/70 !bg-transparent px-5 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
                   onClick={() => { openAuthModal(); setMobileOpen(false) }}
                 >
                   Get Started
