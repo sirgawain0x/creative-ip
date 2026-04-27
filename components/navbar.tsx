@@ -75,7 +75,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden sm:flex items-center gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
@@ -103,7 +103,7 @@ export function Navbar() {
             {status === 'loaded' && wallet ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="hidden md:flex items-center gap-2 bg-secondary/50 border border-border/60 px-3 py-1.5 rounded-full hover:bg-secondary/70 transition-colors cursor-pointer outline-none">
+                  <button className="hidden sm:flex items-center gap-2 bg-secondary/50 border border-border/60 px-3 py-1.5 rounded-full hover:bg-secondary/70 transition-colors cursor-pointer outline-none">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="font-mono text-[10px] text-foreground">
                       {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
@@ -151,7 +151,7 @@ export function Navbar() {
             ) : (
               <Button
                 size="sm"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs glow-primary hidden md:flex"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs glow-primary hidden sm:flex"
                 onClick={() => { if (login) login() }}
               >
                 Get Started
@@ -160,7 +160,7 @@ export function Navbar() {
 
             {/* Mobile menu toggle */}
             <button
-              className="md:hidden text-muted-foreground hover:text-foreground p-1"
+              className="sm:hidden text-muted-foreground hover:text-foreground p-1"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -171,7 +171,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="md:hidden glass border-t border-border px-4 py-4 space-y-2">
+          <div className="sm:hidden glass border-t border-border px-4 py-4 space-y-2">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
