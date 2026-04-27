@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
+import { useUser, useAuthModal, useLogout } from '@account-kit/react'
 
 const NAV_LINKS = [
   { href: '/', label: 'Exchange' },
@@ -25,19 +25,22 @@ const NAV_LINKS = [
 export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { wallet, status } = useWallet()
-  const { login, logout } = useAuth()
+  const user = useUser()
+  const address = user?.address
+  const isConnected = !!user
+  const { logout } = useLogout()
+  const { openAuthModal } = useAuthModal()
   const [isOnrampLoading, setIsOnrampLoading] = useState(false)
 
   const handleBuyUSDC = async () => {
-    if (!wallet?.address) return
+    if (!address) return
     setIsOnrampLoading(true)
-    
+
     try {
       const res = await fetch('/api/onramp/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: wallet.address })
+        body: JSON.stringify({ address })
       })
       
       const data = await res.json()
@@ -100,13 +103,13 @@ export function Navbar() {
               LIVE
             </div>
 
-            {status === 'loaded' && wallet ? (
+            {isConnected && address ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="hidden md:flex items-center gap-2 bg-secondary/50 border border-border/60 px-3 py-1.5 rounded-full hover:bg-secondary/70 transition-colors cursor-pointer outline-none">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="font-mono text-[10px] text-foreground">
-                      {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                      {address.slice(0, 6)}...{address.slice(-4)}
                     </span>
                   </button>
                 </DropdownMenuTrigger>
@@ -137,8 +140,8 @@ export function Navbar() {
                     {!isOnrampLoading && <ExternalLink className="w-3.5 h-3.5" />}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-border/60" />
-                  <DropdownMenuItem 
-                    onClick={() => { if (logout) logout() }}
+                  <DropdownMenuItem
+                    onClick={() => logout()}
                     className="font-mono text-xs text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
@@ -152,7 +155,7 @@ export function Navbar() {
               <Button
                 size="sm"
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs glow-primary hidden md:flex"
-                onClick={() => { if (login) login() }}
+                onClick={() => openAuthModal()}
               >
                 Get Started
               </Button>
@@ -188,18 +191,18 @@ export function Navbar() {
               </Link>
             ))}
             <div className="pt-2 flex flex-col gap-2">
-              {status === 'loaded' && wallet ? (
+              {isConnected && address ? (
                 <div className="flex flex-col gap-2 bg-secondary/30 border border-border/60 p-3 rounded-lg">
                   <div className="flex items-center justify-between mb-2 px-1">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-emerald-500" />
                       <span className="font-mono text-xs text-foreground">
-                        {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                        {address.slice(0, 6)}...{address.slice(-4)}
                       </span>
                     </div>
                     <span className="font-mono text-xs text-muted-foreground">0.00 USDC</span>
                   </div>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="w-full font-mono text-xs border-primary/20 text-primary hover:bg-primary/10 gap-2"
                     onClick={handleBuyUSDC}
@@ -211,7 +214,7 @@ export function Navbar() {
                   <Button
                     variant="ghost"
                     className="w-full font-mono text-xs text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
-                    onClick={() => { if (logout) logout(); setMobileOpen(false); }}
+                    onClick={() => { logout(); setMobileOpen(false) }}
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Disconnect
@@ -220,7 +223,7 @@ export function Navbar() {
               ) : (
                 <Button
                   className="w-full bg-primary text-primary-foreground font-semibold text-xs"
-                  onClick={() => { if (login) login(); setMobileOpen(false) }}
+                  onClick={() => { openAuthModal(); setMobileOpen(false) }}
                 >
                   Get Started
                 </Button>
