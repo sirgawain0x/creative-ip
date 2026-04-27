@@ -78,7 +78,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden sm:flex items-center gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
@@ -106,7 +106,7 @@ export function Navbar() {
             {isConnected && address ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="hidden cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 md:flex">
+                  <button className="hidden cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 sm:flex">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="font-mono text-[10px] text-foreground">
                       {address.slice(0, 6)}...{address.slice(-4)}
@@ -154,7 +154,7 @@ export function Navbar() {
             ) : (
               <Button
                 size="sm"
-                className="hidden rounded-xl border border-primary/70 !bg-transparent px-4 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40 md:flex"
+                className="hidden rounded-xl border border-primary/70 !bg-transparent px-4 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40 sm:flex"
                 onClick={() => openAuthModal()}
               >
                 Get Started
@@ -163,7 +163,7 @@ export function Navbar() {
 
             {/* Mobile menu toggle */}
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 md:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 sm:hidden"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -174,7 +174,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="md:hidden glass border-t border-border px-4 py-4 space-y-2">
+          <div className="sm:hidden glass border-t border-border px-4 py-4 space-y-2">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
