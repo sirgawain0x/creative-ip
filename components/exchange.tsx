@@ -25,6 +25,13 @@ const SORT_OPTIONS = [
   { id: 'popular', label: 'Most Popular' },
 ]
 
+const FILTER_CHIP_BASE =
+  'h-9 rounded-full border !bg-transparent !px-4 !py-2 font-mono text-xs font-semibold !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40'
+const FILTER_CHIP_SELECTED =
+  'border-primary/80 shadow-md shadow-primary/25'
+const FILTER_CHIP_IDLE =
+  'border-primary/60'
+
 export function Exchange() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<IPAssetType | 'all'>('all')
@@ -108,28 +115,28 @@ export function Exchange() {
           The Creative Exchange
         </h1>
         <p className="font-mono text-xs text-muted-foreground max-w-lg">
-          License world-class creative IP instantly. Backed by Story Protocol. Checkout via Crossmint — card or crypto.
+          License world-class creative IP instantly. Backed by Story Protocol — on-chain provenance, royalties, and Alchemy smart wallets.
         </p>
       </div>
 
       {/* Search & Filters */}
       <div className="space-y-3">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="flex gap-3">
+          <div className="group relative flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
             <Input
               placeholder="Search by title, creator, tag…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-input border-border/60 font-mono text-sm focus:border-primary/60"
+              className="h-12 rounded-xl border-border/70 bg-surface-elevated/70 !pl-12 pr-4 font-mono text-sm leading-6 text-foreground shadow-sm transition-all placeholder:text-muted-foreground/70 hover:border-primary/40 hover:bg-muted/30 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/25"
             />
           </div>
           <Button
             variant="outline"
             size="icon"
             className={cn(
-              'border-border/60 transition-all',
-              showFilters && 'border-primary/50 bg-primary/10 text-primary'
+              'h-12 w-12 rounded-xl border border-primary/50 !bg-transparent text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30',
+              showFilters && 'border-primary/70 !bg-primary/10 text-primary shadow-lg shadow-primary/25'
             )}
             onClick={() => setShowFilters(!showFilters)}
             aria-label="Toggle filters"
@@ -151,13 +158,14 @@ export function Exchange() {
                       key={id}
                       onClick={() => setTypeFilter(id as IPAssetType | 'all')}
                       className={cn(
-                        'flex items-center gap-1 px-2.5 py-1 rounded-lg border font-mono text-[10px] transition-all',
+                        'flex items-center gap-2',
+                        FILTER_CHIP_BASE,
                         typeFilter === id
-                          ? 'border-primary/50 bg-primary/10 text-primary'
-                          : 'border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
+                          ? FILTER_CHIP_SELECTED
+                          : FILTER_CHIP_IDLE
                       )}
                     >
-                      {Icon && <Icon className="w-3 h-3" />}
+                      {Icon && <Icon className="h-3.5 w-3.5" />}
                       {label}
                     </button>
                   ))}
@@ -173,10 +181,10 @@ export function Exchange() {
                       key={lic}
                       onClick={() => setLicenseFilter(licenseFilter === lic ? null : lic)}
                       className={cn(
-                        'px-2.5 py-1 rounded-lg border font-mono text-[10px] transition-all',
+                        FILTER_CHIP_BASE,
                         licenseFilter === lic
-                          ? 'border-primary/50 bg-primary/10 text-primary'
-                          : 'border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
+                          ? FILTER_CHIP_SELECTED
+                          : FILTER_CHIP_IDLE
                       )}
                     >
                       {lic}
@@ -194,10 +202,10 @@ export function Exchange() {
                       key={id}
                       onClick={() => setSort(id)}
                       className={cn(
-                        'px-2.5 py-1 rounded-lg border font-mono text-[10px] transition-all',
+                        FILTER_CHIP_BASE,
                         sort === id
-                          ? 'border-primary/50 bg-primary/10 text-primary'
-                          : 'border-border/60 text-muted-foreground hover:border-border hover:text-foreground'
+                          ? FILTER_CHIP_SELECTED
+                          : FILTER_CHIP_IDLE
                       )}
                     >
                       {label}
@@ -223,7 +231,7 @@ export function Exchange() {
               </span>
             )}
             {hasFilters && (
-              <button className="font-mono text-[10px] text-muted-foreground hover:text-foreground" onClick={clearFilters}>
+              <button className="rounded-md border border-primary/30 bg-transparent px-2 py-1 font-mono text-[10px] text-primary transition-all hover:border-[#EC407A] hover:bg-primary/10 hover:shadow-md hover:shadow-primary/25" onClick={clearFilters}>
                 Clear all
               </button>
             )}
@@ -256,7 +264,11 @@ export function Exchange() {
             </p>
             <p className="font-mono text-xs text-muted-foreground mt-1">Try adjusting your search or filters</p>
           </div>
-          <Button variant="outline" className="font-mono text-xs border-border/60" onClick={clearFilters}>
+          <Button
+            variant="outline"
+            className="h-11 min-w-32 rounded-xl border border-primary/70 !bg-transparent px-6 font-mono text-xs font-semibold !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
+            onClick={clearFilters}
+          >
             Clear Filters
           </Button>
         </div>
