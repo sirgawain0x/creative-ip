@@ -1,6 +1,7 @@
 "use client"
 
 import { type PropsWithChildren } from "react"
+import "@account-kit/react/styles.css"
 import { AlchemyAccountProvider } from "@account-kit/react"
 import type { AlchemyClientState } from "@account-kit/core"
 import { QueryClientProvider } from "@tanstack/react-query"

@@ -152,7 +152,8 @@ export function BuyLicenseModal({ asset, open, onOpenChange }: BuyLicenseModalPr
               <div className="flex items-center gap-2 justify-center">
                 <Shield className="w-3 h-3 text-primary" />
                 <span className="font-mono text-[10px] text-muted-foreground">
-                  Secured by <span className="text-primary">Story Protocol</span> — on-chain licensing
+                  Secured by <span className="text-primary">Story Protocol</span> and{' '}
+                  <span className="text-primary">Alchemy</span> — smart wallets, on-chain licensing
                 </span>
               </div>
 

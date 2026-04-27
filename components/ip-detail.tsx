@@ -302,7 +302,7 @@ export function IPDetail({ asset }: IPDetailProps) {
                 {isConnected ? `Buy License — ${asset.price} ${asset.currency}` : 'Connect Wallet to Buy'}
               </Button>
               <p className="font-mono text-[10px] text-muted-foreground text-center">
-                Secured by Story Protocol · On-chain licensing
+                Secured by Story Protocol · Alchemy smart wallets · On-chain licensing
               </p>
             </div>
           </div>
