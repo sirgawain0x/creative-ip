@@ -8,10 +8,21 @@ import { QueryClient } from "@tanstack/react-query"
 import { getStoryChain } from "@/lib/sdk/story/chains"
 
 const storyChain = getStoryChain()
+const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+const alchemyRpcUrl =
+  process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL ??
+  storyChain.rpcUrls.alchemy?.http[0] ??
+  storyChain.rpcUrls.default.http[0]
 
-const transport = alchemy({
-  apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string,
-})
+const transport = alchemy(
+  alchemyApiKey
+    ? { apiKey: alchemyApiKey }
+    : {
+        // Keep the app shell renderable in local/previews without env.
+        // Wallet operations still require a real Alchemy key.
+        rpcUrl: alchemyRpcUrl,
+      },
+)
 
 const customStorage = () => ({
   getItem: (key: string) => {

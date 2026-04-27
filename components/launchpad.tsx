@@ -86,10 +86,10 @@ export function Launchpad() {
             </p>
           </div>
           <Button
-            className="bg-primary text-primary-foreground font-mono text-xs gap-2 glow-primary self-start sm:self-auto shrink-0"
+            className="!h-12 !w-full rounded-xl border border-primary/70 !bg-transparent !px-7 font-mono text-sm font-semibold !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40 sm:!w-auto sm:min-w-52"
             onClick={handleRegisterClick}
           >
-            <Plus className="w-3.5 h-3.5" /> Register New IP
+            <Plus className="h-4 w-4" /> Register New IP
           </Button>
         </div>
 
@@ -219,7 +219,7 @@ export function Launchpad() {
               </p>
             </div>
             <Button
-              className="bg-primary text-primary-foreground font-semibold text-xs mt-2"
+              className="mt-3 !h-12 min-w-40 rounded-xl border border-primary/70 !bg-transparent !px-7 font-mono text-sm font-semibold !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
               onClick={() => openAuthModal()}
             >
               Connect Wallet
@@ -228,11 +228,13 @@ export function Launchpad() {
         )}
       </div>
 
-      <RegisterIPWizard 
-        open={wizardOpen} 
-        onOpenChange={setWizardOpen} 
-        onRegisterSuccess={(newAsset) => setMyPortfolio([newAsset, ...myPortfolio])} 
-      />
+      {isConnected && (
+        <RegisterIPWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          onRegisterSuccess={(newAsset) => setMyPortfolio([newAsset, ...myPortfolio])}
+        />
+      )}
     </>
   )
 }

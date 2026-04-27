@@ -4,11 +4,13 @@ import { resolveGroveURI } from './grove'
 
 const endpoint = process.env.NEXT_PUBLIC_GOLDSKY_GRAPHQL_URL
 
-if (!endpoint) {
-  console.warn('NEXT_PUBLIC_GOLDSKY_GRAPHQL_URL is missing in environment variables.')
-}
+const emptyGraphQLResponse = { ipregistereds: [] }
 
-export const graphQLClient = new GraphQLClient(endpoint || '')
+export const graphQLClient = endpoint
+  ? new GraphQLClient(endpoint)
+  : {
+      request: async () => emptyGraphQLResponse,
+    }
 
 // We define generic query fields representing an IPAssetRegistry event based Subgraph.
 // Goldsky generates Entities from events. Since we are indexing IPRegistered:
