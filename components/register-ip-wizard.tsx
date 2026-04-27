@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { IPAsset } from '@/lib/data'
-import { useWallet } from '@/hooks/use-story-wallet'
+import { useUser, useSmartAccountClient } from '@account-kit/react'
+import { http, parseEther, type Address } from 'viem'
+import { StoryClient, PILFlavor, WIP_TOKEN_ADDRESS } from '@story-protocol/core-sdk'
+import { getStoryChain, getStoryChainId } from '@/lib/sdk/story/chains'
 import {
   Music,
   BookOpen,
@@ -34,7 +37,10 @@ interface RegisterIPWizardProps {
 }
 
 export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: RegisterIPWizardProps) {
-  const { wallet } = useWallet()
+  const user = useUser()
+  const address = user?.address as Address | undefined
+  const isConnected = !!user
+  const { client: smartAccountClient } = useSmartAccountClient({})
   const [step, setStep] = useState(1)
   const [type, setType] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -92,120 +98,173 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
     )
   }
 
+  const uploadFileToS3 = async (f: File): Promise<string> => {
+    const presignRes = await fetch('/api/presign-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: f.name, contentType: f.type }),
+    })
+    if (!presignRes.ok) {
+      const err = await presignRes.json().catch(() => ({}))
+      throw new Error(err.error || `Failed to get upload URL for ${f.name}`)
+    }
+    const { uploadUrl, downloadUrl } = await presignRes.json()
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': f.type },
+      body: f,
+    })
+    if (!uploadRes.ok) {
+      throw new Error(`Upload failed for ${f.name} (${uploadRes.status})`)
+    }
+    return downloadUrl
+  }
+
+  const uploadMetadata = async (
+    metadata: Record<string, unknown>,
+    kind: 'ip' | 'nft'
+  ): Promise<{ uri: string; hash: `0x${string}` }> => {
+    const res = await fetch('/api/upload-metadata', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ metadata, kind }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error || `Failed to upload ${kind} metadata`)
+    }
+    return res.json()
+  }
+
   const handleRegister = async () => {
+    if (!smartAccountClient || !address) {
+      alert('Connect your wallet first.')
+      return
+    }
+
+    const spgNftContract = process.env.NEXT_PUBLIC_SPG_NFT_CONTRACT as Address | undefined
+    if (!spgNftContract) {
+      alert('NEXT_PUBLIC_SPG_NFT_CONTRACT is not configured.')
+      return
+    }
+
     setRegistering(true)
-    
+
     try {
-      let finalMediaUrl = ""; // Default to empty, will be set if file is uploaded
-      let finalImageUrl = ""; // Default to empty, will be set if coverFile is uploaded
+      let mediaUrl = ''
+      let coverUrl = ''
 
-      // 1. Upload Media File directly to S3 via Presigned URL
-      if (file) {
-        const presignRes = await fetch('/api/presign-upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: file.name, contentType: file.type })
-        });
-        if (!presignRes.ok) {
-          const err = await presignRes.json().catch(() => ({}));
-          throw new Error(err.error || 'Failed to get upload URL for media file');
-        }
-        const { uploadUrl, downloadUrl } = await presignRes.json();
+      if (file) mediaUrl = await uploadFileToS3(file)
+      if (coverFile) coverUrl = await uploadFileToS3(coverFile)
+      else if (type === 'image' && file) coverUrl = mediaUrl
 
-        // Native browser-to-S3 bypasses 4.5MB Vercel restrictions
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': file.type },
-          body: file
-        });
-        if (!uploadRes.ok) {
-          throw new Error(`Media file upload failed (${uploadRes.status})`);
-        }
-        finalMediaUrl = downloadUrl;
-      }
+      const ipType = type || 'music'
+      const isMusic = ipType === 'music'
+      const isLit = ipType === 'literature'
+      const mediaType = isMusic ? 'audio/mpeg' : isLit ? 'application/epub+zip' : 'image/jpeg'
 
-      // 2. Upload Cover File directly to S3 via Presigned URL
-      if (coverFile) {
-        const presignRes = await fetch('/api/presign-upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: coverFile.name, contentType: coverFile.type })
-        });
-        if (!presignRes.ok) {
-          const err = await presignRes.json().catch(() => ({}));
-          throw new Error(err.error || 'Failed to get upload URL for cover image');
-        }
-        const { uploadUrl, downloadUrl } = await presignRes.json();
-
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': coverFile.type },
-          body: coverFile
-        });
-        if (!uploadRes.ok) {
-          throw new Error(`Cover image upload failed (${uploadRes.status})`);
-        }
-        finalImageUrl = downloadUrl;
-      } else if (type === 'image' && file) {
-        finalImageUrl = finalMediaUrl; // Fallback, the standard media file acts as the cover art if visual
-      }
-
-      // 3. Register IP via API with standard JSON
-      const payload = {
+      const ipMetadata = {
         title: title || 'Untitled',
         description: description || '',
-        ipType: type || 'music',
-        royalty,
-        licenses: licenses.join(', '),
-        owner: wallet?.address || 'email:test@example.com:story-testnet',
-        mediaUrl: finalMediaUrl,
-        imageUrl: finalImageUrl
-      };
-
-      let res = await fetch("/api/register-ip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!res.ok) {
-        const errData = await res.json().catch(()=>({}));
-        throw new Error(errData.error || "Failed to register IP with registry API");
+        createdAt: new Date().toISOString(),
+        ipType,
+        image: coverUrl,
+        mediaUrl,
+        mediaType,
+        creators: [
+          {
+            name: 'Creator',
+            address,
+            contributionPercent: 100,
+          },
+        ],
+        media: mediaUrl ? [{ name: title || 'Untitled', url: mediaUrl, mimeType: mediaType }] : [],
+        attributes: [
+          { key: 'Type', value: ipType },
+          { key: 'Licenses', value: licenses.join(', ') },
+          { key: 'RoyaltyRate', value: royalty },
+        ],
       }
 
-      const registerData = await res.json();
-      console.log('IP registry response:', registerData);
-      
-      const newMockId = registerData.onChain?.ipAssetId || registerData.id || `IP-0x${Math.random().toString(16).slice(2, 10).toUpperCase()}…`
-      setCreatedId(newMockId)
-      
+      const nftMetadata = {
+        name: title || 'Untitled',
+        description: description || '',
+        image: coverUrl,
+        ...(mediaUrl && !type?.includes('image') ? { animation_url: mediaUrl } : {}),
+      }
+
+      const [ipMeta, nftMeta] = await Promise.all([
+        uploadMetadata(ipMetadata, 'ip'),
+        uploadMetadata(nftMetadata, 'nft'),
+      ])
+
+      const storyChain = getStoryChain()
+      const storyRpc = storyChain.rpcUrls.default.http[0] as string
+
+      // Pass the Account Kit SmartAccountClient as the wallet — Story SDK calls it as a viem
+      // WalletClient, which under the hood dispatches UserOperations through the bundler.
+      // Gas sponsorship happens automatically via gasManagerConfig.policyId in the Account Kit
+      // config (NEXT_PUBLIC_STORY_POLICY_ID).
+      const storyClient = StoryClient.newClient({
+        wallet: smartAccountClient as never,
+        transport: http(storyRpc),
+        chainId: getStoryChainId(),
+      })
+
+      const royaltyShare = Math.max(0, Math.min(100, Number(royalty) || 0))
+      const licenseTermsData = licenses.length
+        ? [
+            {
+              terms: PILFlavor.commercialRemix({
+                commercialRevShare: royaltyShare,
+                defaultMintingFee: parseEther('0'),
+                currency: WIP_TOKEN_ADDRESS,
+              }),
+            },
+          ]
+        : []
+
+      const response = await storyClient.ipAsset.mintAndRegisterIpAssetWithPilTerms({
+        spgNftContract,
+        licenseTermsData,
+        ipMetadata: {
+          ipMetadataURI: ipMeta.uri,
+          ipMetadataHash: ipMeta.hash,
+          nftMetadataURI: nftMeta.uri,
+          nftMetadataHash: nftMeta.hash,
+        },
+      })
+
+      const ipId = response.ipId || `IP-${response.txHash?.slice(0, 10) ?? 'unknown'}`
+      setCreatedId(ipId)
       setRegistering(false)
       setDone(true)
-      
+
       if (onRegisterSuccess) {
         onRegisterSuccess({
           id: `new-${Date.now()}`,
-          storyProtocolId: newMockId,
+          storyProtocolId: ipId,
           title: title || 'Untitled',
           creator: 'You',
           creatorHandle: '@creator',
           type: (type as any) || 'music',
-          coverImage: registerData?.nftMetadata?.image || '/images/art-1.jpg',
+          coverImage: coverUrl || '/images/art-1.jpg',
           description: description || '',
           licenses: licenses as any,
           price: 0,
           currency: 'USDC',
-          royaltyRate: Number(royalty) || 10,
+          royaltyRate: royaltyShare,
           registered: new Date().toISOString().split('T')[0],
           tags: ['New', 'Registered'],
           stats: { views: 0, licenses: 0, revenue: 0 },
-          metadataURI: ''
+          metadataURI: ipMeta.uri,
         })
       }
     } catch (err) {
       console.error(err)
       setRegistering(false)
-      alert(err instanceof Error ? err.message : "Failed to register IP.")
+      alert(err instanceof Error ? err.message : 'Failed to register IP on Story Protocol.')
     }
   }
 
@@ -488,10 +547,10 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
                 </Button>
                 <Button
                   className="flex-1 bg-primary text-primary-foreground font-mono text-xs gap-2 glow-primary"
-                  disabled={licenses.length === 0 || !wallet}
+                  disabled={licenses.length === 0 || !isConnected}
                   onClick={handleRegister}
                 >
-                  <Zap className="w-3.5 h-3.5" /> {wallet ? 'Register on Chain' : 'Connect Wallet'}
+                  <Zap className="w-3.5 h-3.5" /> {isConnected ? 'Register on Chain' : 'Connect Wallet'}
                 </Button>
               </div>
             </div>

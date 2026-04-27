@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWallet, useAuth } from '@/hooks/use-story-wallet'
+import { useUser, useAuthModal } from '@account-kit/react'
 import { IPAsset } from '@/lib/data'
 import { IPCard } from './ip-card'
 import { RegisterIPWizard } from './register-ip-wizard'
@@ -26,12 +26,14 @@ export function Launchpad() {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [myPortfolio, setMyPortfolio] = useState<IPAsset[]>([])
   const [loading, setLoading] = useState(true)
-  const { status, wallet } = useWallet()
-  const { login } = useAuth()
+  const user = useUser()
+  const address = user?.address
+  const isConnected = !!user
+  const { openAuthModal } = useAuthModal()
 
   useEffect(() => {
     async function fetchUserAssets() {
-      if (status !== 'loaded' || !wallet?.address) {
+      if (!isConnected || !address) {
         setLoading(false)
         return
       }
@@ -54,11 +56,11 @@ export function Launchpad() {
       }
     }
     fetchUserAssets()
-  }, [status, wallet?.address])
+  }, [isConnected, address])
 
   const handleRegisterClick = () => {
-    if (status !== 'loaded') {
-      if (login) login()
+    if (!isConnected) {
+      openAuthModal()
     } else {
       setWizardOpen(true)
     }
@@ -91,7 +93,7 @@ export function Launchpad() {
           </Button>
         </div>
 
-        {status === 'loaded' && wallet ? (
+        {isConnected && address ? (
           <>
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -218,7 +220,7 @@ export function Launchpad() {
             </div>
             <Button
               className="bg-primary text-primary-foreground font-semibold text-xs mt-2"
-              onClick={() => { if (login) login() }}
+              onClick={() => openAuthModal()}
             >
               Connect Wallet
             </Button>

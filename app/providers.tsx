@@ -1,22 +1,25 @@
-"use client";
+"use client"
 
-import { useState, type ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AlchemyAccountProvider } from "@account-kit/react";
-import "@account-kit/react/styles.css";
-import { alchemyAccountConfig } from "@/lib/alchemy-account-config";
+import { type PropsWithChildren } from "react"
+import "@account-kit/react/styles.css"
+import { AlchemyAccountProvider } from "@account-kit/react"
+import type { AlchemyClientState } from "@account-kit/core"
+import { QueryClientProvider } from "@tanstack/react-query"
+import { config, queryClient } from "@/config"
 
-export default function Providers({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
-
+export default function Providers({
+  children,
+  initialState,
+}: PropsWithChildren<{ initialState?: AlchemyClientState }>) {
   return (
     <QueryClientProvider client={queryClient}>
       <AlchemyAccountProvider
-        config={alchemyAccountConfig}
+        config={config}
         queryClient={queryClient}
+        initialState={initialState}
       >
         {children}
       </AlchemyAccountProvider>
     </QueryClientProvider>
-  );
+  )
 }

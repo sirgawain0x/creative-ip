@@ -149,11 +149,11 @@ export function BuyLicenseModal({ asset, open, onOpenChange }: BuyLicenseModalPr
                 </div>
               </div>
 
-              {/* Checkout / licensing UX — wire to your payment provider */}
               <div className="flex items-center gap-2 justify-center">
                 <Shield className="w-3 h-3 text-primary" />
                 <span className="font-mono text-[10px] text-muted-foreground">
-                  Secured by <span className="text-primary">Alchemy Account Kit</span> — smart wallet, no seed phrase
+                  Secured by <span className="text-primary">Story Protocol</span> and{' '}
+                  <span className="text-primary">Alchemy</span> — smart wallets, on-chain licensing
                 </span>
               </div>
 

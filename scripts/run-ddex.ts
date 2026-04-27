@@ -10,7 +10,7 @@ if (fs.existsSync(envPath)) {
 }
 
 // Ensure critical variables are set (basic sanity check before running)
-if (!process.env.MEGA_S4_ACCESS_KEY || !process.env.IP_REGISTRY_API_KEY || !process.env.IRYS_PRIVATE_KEY) {
+if (!process.env.MEGA_S4_ACCESS_KEY || !process.env.STORY_PRIVATE_KEY || !process.env.STORY_SPG_NFT_CONTRACT || !process.env.IRYS_PRIVATE_KEY) {
     console.warn("⚠️ Warning: Missing some DDEX environment variables. Ensure .env.local is fully configured.");
 }
 
