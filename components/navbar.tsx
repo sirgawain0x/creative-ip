@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -21,13 +21,35 @@ const NAV_LINKS = [
   { href: '/', label: 'Exchange' },
   { href: '/launchpad', label: 'Launchpad' },
 ]
+const DESKTOP_MEDIA_QUERY = '(min-width: 768px)'
 
 export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
   const { wallet, status } = useWallet()
   const { login, logout } = useAuth()
   const [isOnrampLoading, setIsOnrampLoading] = useState(false)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY)
+    const updateViewportMode = () => {
+      setIsDesktop(mediaQuery.matches)
+    }
+
+    updateViewportMode()
+    mediaQuery.addEventListener('change', updateViewportMode)
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateViewportMode)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isDesktop && mobileOpen) {
+      setMobileOpen(false)
+    }
+  }, [isDesktop, mobileOpen])
 
   const handleBuyUSDC = async () => {
     if (!wallet?.address) return
@@ -75,22 +97,24 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'font-mono text-xs uppercase tracking-widest px-4 py-2 rounded transition-all',
-                  pathname === href
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
+          {isDesktop && (
+            <div className="flex items-center gap-1">
+              {NAV_LINKS.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    'font-mono text-xs uppercase tracking-widest px-4 py-2 rounded transition-all',
+                    pathname === href
+                      ? 'text-primary bg-primary/10'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  )}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* Right side */}
           <div className="flex items-center gap-3">
@@ -100,10 +124,10 @@ export function Navbar() {
               LIVE
             </div>
 
-            {status === 'loaded' && wallet ? (
+            {isDesktop && (status === 'loaded' && wallet ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="hidden md:flex items-center gap-2 bg-secondary/50 border border-border/60 px-3 py-1.5 rounded-full hover:bg-secondary/70 transition-colors cursor-pointer outline-none">
+                  <button className="flex items-center gap-2 bg-secondary/50 border border-border/60 px-3 py-1.5 rounded-full hover:bg-secondary/70 transition-colors cursor-pointer outline-none">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span className="font-mono text-[10px] text-foreground">
                       {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
@@ -151,27 +175,29 @@ export function Navbar() {
             ) : (
               <Button
                 size="sm"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs glow-primary hidden md:flex"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs glow-primary flex"
                 onClick={() => { if (login) login() }}
               >
                 Get Started
               </Button>
-            )}
+            ))}
 
             {/* Mobile menu toggle */}
-            <button
-              className="md:hidden text-muted-foreground hover:text-foreground p-1"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            {!isDesktop && (
+              <button
+                className="text-muted-foreground hover:text-foreground p-1"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label="Toggle menu"
+              >
+                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            )}
           </div>
         </nav>
 
         {/* Mobile Menu */}
-        {mobileOpen && (
-          <div className="md:hidden glass border-t border-border px-4 py-4 space-y-2">
+        {!isDesktop && mobileOpen && (
+          <div className="glass border-t border-border px-4 py-4 space-y-2">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
