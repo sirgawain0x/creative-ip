@@ -1,67 +1,75 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
+/**
+ * Registers an IP asset via your configured HTTP registry (collection mint API).
+ * Set IP_REGISTRY_API_BASE (e.g. https://…/api), IP_REGISTRY_API_KEY, and IP_REGISTRY_COLLECTION_ID.
+ * Request/response shapes depend on the provider; the payload below matches common Story collection flows.
+ */
 export async function POST(req: Request) {
   try {
     const dataObj = await req.json();
 
-    const title = dataObj.title || 'Untitled';
-    const description = dataObj.description || '';
-    const ipType = dataObj.ipType || 'music';
+    const title = dataObj.title || "Untitled";
+    const description = dataObj.description || "";
+    const ipType = dataObj.ipType || "music";
     const owner = dataObj.owner;
 
     const finalMediaUrl = dataObj.mediaUrl || "";
     const finalImageUrl = dataObj.imageUrl || "";
 
-    const licenses = dataObj.licenses || '';
-    const royalty = dataObj.royalty || '10';
+    const licenses = dataObj.licenses || "";
+    const royalty = dataObj.royalty || "10";
 
     if (!owner) {
-        return NextResponse.json({ error: 'Missing owner address' }, { status: 400 });
+      return NextResponse.json({ error: "Missing owner address" }, { status: 400 });
     }
 
-    const CROSSMINT_SERVER_KEY = process.env.CROSSMINT_SERVER_KEY;
-    if (!CROSSMINT_SERVER_KEY) {
-        throw new Error("Missing CROSSMINT_SERVER_KEY in environment variables. Have you added this to Vercel?");
+    const apiKey = process.env.IP_REGISTRY_API_KEY;
+    const baseUrl = process.env.IP_REGISTRY_API_BASE?.replace(/\/$/, "");
+    const collectionId = process.env.IP_REGISTRY_COLLECTION_ID;
+
+    if (!apiKey) {
+      throw new Error(
+        "Missing IP_REGISTRY_API_KEY. Add it to your environment (e.g. Vercel project env)."
+      );
+    }
+    if (!baseUrl) {
+      throw new Error(
+        "Missing IP_REGISTRY_API_BASE (root URL of your IP/collection registry API, no trailing slash)."
+      );
+    }
+    if (!collectionId) {
+      throw new Error("Missing IP_REGISTRY_COLLECTION_ID.");
     }
 
-    // Automatically route to staging or production based on the key prefix
-    const CROSSMINT_BASE_URL = CROSSMINT_SERVER_KEY.startsWith("sk_live_")
-      ? "https://www.crossmint.com/api"
-      : "https://staging.crossmint.com/api";
-
-    const COLLECTION_ID = process.env.COLLECTION_ID;
-
-    if (!COLLECTION_ID) {
-        throw new Error("Missing COLLECTION_ID in environment variables. Have you added this to Vercel?");
-    }
-
-    const isMusic = ipType === 'music';
-    const isLit = ipType === 'literature';
+    const isMusic = ipType === "music";
+    const isLit = ipType === "literature";
 
     const mediaUrl = finalMediaUrl;
-    const mediaType = isMusic ? 'audio/mpeg' : isLit ? 'application/epub+zip' : 'image/jpeg';
+    const mediaType = isMusic
+      ? "audio/mpeg"
+      : isLit
+        ? "application/epub+zip"
+        : "image/jpeg";
 
-    const nftMetadata: any = {
+    const nftMetadata: Record<string, unknown> = {
       name: title,
       description: description,
       image: finalImageUrl,
     };
 
-    const attributes: any[] = [
-        { key: 'Type', value: ipType },
-        { key: 'Licenses', value: licenses },
-        { key: 'RoyaltyRate', value: royalty }
+    const attributes: { key: string; value: string }[] = [
+      { key: "Type", value: ipType },
+      { key: "Licenses", value: licenses },
+      { key: "RoyaltyRate", value: royalty },
     ];
 
-    // Format owner as Crossmint locator for Story network
-    let finalOwnerLocator = owner;
-
-    if (owner.startsWith('0x')) {
-        finalOwnerLocator = `story-testnet:${owner}`;
+    let ownerLocator = owner;
+    if (owner.startsWith("0x")) {
+      ownerLocator = `story-testnet:${owner}`;
     }
 
-    // Build ipAssetMetadata matching Crossmint Music Quickstart docs
-    const ipAssetMetadata: any = {
+    const ipAssetMetadata: Record<string, unknown> = {
       title: title,
       createdAt: new Date().toISOString(),
       ipType: ipType,
@@ -69,56 +77,60 @@ export async function POST(req: Request) {
       mediaUrl: mediaUrl,
       mediaType: mediaType,
       creators: [
-          {
-              name: 'Creator',
-              crossmintUserLocator: finalOwnerLocator,
-              contributionPercent: 100
-          }
+        {
+          name: "Creator",
+          // Legacy registry field name required by some Story collection APIs
+          crossmintUserLocator: ownerLocator,
+          contributionPercent: 100,
+        },
       ],
       media: [
-          {
-              name: title,
-              url: mediaUrl,
-              mimeType: mediaType
-          }
+        {
+          name: title,
+          url: mediaUrl,
+          mimeType: mediaType,
+        },
       ],
-      attributes: attributes
+      attributes: attributes,
     };
 
-    const crossmintPayload = {
-      owner: finalOwnerLocator,
+    const payload = {
+      owner: ownerLocator,
       nftMetadata,
-      ipAssetMetadata
+      ipAssetMetadata,
     };
 
-    const requestUrl = `${CROSSMINT_BASE_URL}/v1/ip/collections/${COLLECTION_ID}/ipassets`;
-    console.log("Crossmint request URL:", requestUrl);
-    console.log("Crossmint request payload:", JSON.stringify(crossmintPayload, null, 2));
+    const requestUrl = `${baseUrl}/v1/ip/collections/${collectionId}/ipassets`;
 
     const res = await fetch(requestUrl, {
       method: "POST",
       headers: {
-        "X-API-KEY": CROSSMINT_SERVER_KEY,
-        "Content-Type": "application/json"
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(crossmintPayload)
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
-        const errObj = await res.json().catch(() => ({}));
-        const crossmintMessage = errObj.message || JSON.stringify(errObj);
-        console.error("Crossmint API Error:", res.status, crossmintMessage, errObj);
+      const errObj = await res.json().catch(() => ({}));
+      const message =
+        (errObj as { message?: string }).message || JSON.stringify(errObj);
+      console.error("IP registry API error:", res.status, message, errObj);
 
-        return NextResponse.json({
-            error: `Crossmint API Error (${res.status}): ${crossmintMessage}`,
-            details: errObj
-        }, { status: res.status });
+      return NextResponse.json(
+        {
+          error: `Registry API error (${res.status}): ${message}`,
+          details: errObj,
+        },
+        { status: res.status }
+      );
     }
 
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (error: any) {
-    console.error("Register IP Route Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error("Register IP route error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

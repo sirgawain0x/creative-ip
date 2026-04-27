@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { type IPAsset } from '@/lib/data'
 import { BuyLicenseModal } from './buy-license-modal'
 import { Button } from './ui/button'
-import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
+import { useWallet, useAuth } from '@/hooks/use-story-wallet'
 import { cn } from '@/lib/utils'
 import {
   Music,
@@ -302,7 +302,7 @@ export function IPDetail({ asset }: IPDetailProps) {
                 {status === 'loaded' && wallet ? `Buy License — ${asset.price} ${asset.currency}` : 'Connect Wallet to Buy'}
               </Button>
               <p className="font-mono text-[10px] text-muted-foreground text-center">
-                Secured by Crossmint StoryKit · No gas fees · Card or Crypto
+                Secured by Alchemy smart wallets · No seed phrase · Email, passkey, or social login
               </p>
             </div>
           </div>

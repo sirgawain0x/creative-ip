@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useAuth, useWallet } from '@crossmint/client-sdk-react-ui'
+import { useAuth, useWallet } from '@/hooks/use-story-wallet'
 
 const NAV_LINKS = [
   { href: '/', label: 'Exchange' },

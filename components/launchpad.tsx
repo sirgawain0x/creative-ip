@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
+import { useWallet, useAuth } from '@/hooks/use-story-wallet'
 import { IPAsset } from '@/lib/data'
 import { IPCard } from './ip-card'
 import { RegisterIPWizard } from './register-ip-wizard'

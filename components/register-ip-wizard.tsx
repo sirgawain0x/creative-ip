@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { IPAsset } from '@/lib/data'
-import { useWallet } from '@crossmint/client-sdk-react-ui'
+import { useWallet } from '@/hooks/use-story-wallet'
 import {
   Music,
   BookOpen,
@@ -170,11 +170,11 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
       
       if (!res.ok) {
         const errData = await res.json().catch(()=>({}));
-        throw new Error(errData.error || "Failed to register via Crossmint API");
+        throw new Error(errData.error || "Failed to register IP with registry API");
       }
 
       const registerData = await res.json();
-      console.log('Crossmint Registration Data:', registerData);
+      console.log('IP registry response:', registerData);
       
       const newMockId = registerData.onChain?.ipAssetId || registerData.id || `IP-0x${Math.random().toString(16).slice(2, 10).toUpperCase()}…`
       setCreatedId(newMockId)
@@ -205,7 +205,7 @@ export function RegisterIPWizard({ open, onOpenChange, onRegisterSuccess }: Regi
     } catch (err) {
       console.error(err)
       setRegistering(false)
-      alert(err instanceof Error ? err.message : "Failed to register IP via Crossmint.")
+      alert(err instanceof Error ? err.message : "Failed to register IP.")
     }
   }
 

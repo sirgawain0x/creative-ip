@@ -1,5 +1,5 @@
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 
 async function main() {
   const collectionId = process.env.IP_REGISTRY_COLLECTION_ID;
@@ -7,31 +7,26 @@ async function main() {
   const baseUrl = (
     process.env.IP_REGISTRY_API_BASE || ""
   ).replace(/\/$/, "");
-  
-  // 1x1 pixel base64 PNG
-  const dataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
+  if (!collectionId || !apiKey || !baseUrl) {
+    console.log(
+      "Set IP_REGISTRY_COLLECTION_ID, IP_REGISTRY_API_KEY, and IP_REGISTRY_API_BASE in .env.local"
+    );
+    return;
+  }
 
   const jsonBody = {
     owner: "email:test@example.com:story-testnet",
     nftMetadata: {
       name: "Test Name",
       description: "Test description",
-      image: dataUri
     },
     ipAssetMetadata: {
       title: "Test Name",
-      ipType: "image",
+      ipType: "music",
       attributes: [],
-      mediaUrl: dataUri
-    }
+    },
   };
-
-  if (!collectionId || !apiKey || !baseUrl) {
-    console.log(
-      "Set IP_REGISTRY_COLLECTION_ID, IP_REGISTRY_API_KEY, IP_REGISTRY_API_BASE"
-    );
-    return;
-  }
 
   let res = await fetch(
     `${baseUrl}/v1/ip/collections/${collectionId}/ipassets`,
@@ -45,6 +40,22 @@ async function main() {
     }
   );
   console.log("JSON response status:", res.status);
+  console.log(await res.text());
+
+  const formData = new FormData();
+  formData.append("owner", "email:test@example.com:story-testnet");
+  formData.append("nftMetadata", JSON.stringify(jsonBody.nftMetadata));
+  formData.append("ipAssetMetadata", JSON.stringify(jsonBody.ipAssetMetadata));
+
+  res = await fetch(`${baseUrl}/v1/ip/collections/${collectionId}/ipassets`, {
+    method: "POST",
+    headers: {
+      "X-API-KEY": apiKey,
+    },
+    body: formData,
+  });
+
+  console.log("\nFormData response status:", res.status);
   console.log(await res.text());
 }
 

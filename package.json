@@ -9,10 +9,15 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@account-kit/infra": "4.88.1",
+    "@account-kit/react": "4.88.1",
+    "@alchemy/aa-infra": "5.0.0-beta.24",
+    "@alchemy/common": "5.0.0-beta.24",
+    "@alchemy/smart-accounts": "5.0.0-beta.24",
+    "@alchemy/wallet-apis": "5.0.0-beta.24",
     "@aws-sdk/client-s3": "^3.1012.0",
     "@aws-sdk/s3-request-presigner": "^3.1014.0",
     "@coinbase/coinbase-sdk": "^0.25.0",
-    "@crossmint/client-sdk-react-ui": "^3.0.2",
     "@hookform/resolvers": "^3.9.1",
     "@irys/upload": "^0.0.15",
     "@irys/upload-ethereum": "^0.0.16",
@@ -20,6 +25,7 @@
     "@lens-chain/storage-client": "^1.0.6",
     "@prisma/client": "^6.19.2",
     "@radix-ui/react-accordion": "1.2.12",
+    "@tanstack/react-query": "^5.90.2",
     "@radix-ui/react-alert-dialog": "1.1.15",
     "@radix-ui/react-aspect-ratio": "1.1.8",
     "@radix-ui/react-avatar": "1.1.11",
@@ -73,6 +79,7 @@
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2",
     "viem": "^2.47.5",
+    "wagmi": "^2.19.5",
     "xml2js": "^0.6.2",
     "zod": "^3.24.1"
   },

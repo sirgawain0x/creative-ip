@@ -8,15 +8,25 @@ export async function registerStoryIPAsset(
 ): Promise<string> {
     console.log(`\n--- Registering ${track.title} on Story Protocol ---`);
 
-    const CROSSMINT_BASE_URL = "https://staging.crossmint.com/api";
+    const baseUrl = process.env.IP_REGISTRY_API_BASE?.replace(/\/$/, "");
+    const apiKey = process.env.IP_REGISTRY_API_KEY || "";
+    const collectionId = process.env.IP_REGISTRY_COLLECTION_ID;
+    const projectId = process.env.IP_REGISTRY_PROJECT_ID;
+
+    if (!baseUrl || !apiKey || !collectionId || !projectId) {
+        throw new Error(
+            "Configure IP_REGISTRY_API_BASE, IP_REGISTRY_API_KEY, IP_REGISTRY_COLLECTION_ID, and IP_REGISTRY_PROJECT_ID."
+        );
+    }
+
     const headers = {
-        "X-API-KEY": process.env.CROSSMINT_SERVER_KEY || "",
+        "X-API-KEY": apiKey,
         "Content-Type": "application/json"
     };
 
-    // STEP 1: Gasless Minting via Crossmint
-    console.log("Minting base NFT via Crossmint...");
-    const mintRes = await fetch(`${CROSSMINT_BASE_URL}/2022-06-09/collections/${process.env.COLLECTION_ID}/nfts`, {
+    // STEP 1: Gasless / server-side collection mint (registry-specific)
+    console.log("Minting base NFT via registry API...");
+    const mintRes = await fetch(`${baseUrl}/2022-06-09/collections/${collectionId}/nfts`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -43,7 +53,7 @@ export async function registerStoryIPAsset(
 
     // STEP 2: Register as IP Asset
     console.log("Registering as Story IP Asset...");
-    const ipRes = await fetch(`${CROSSMINT_BASE_URL}/v1-alpha2/projects/${process.env.CROSSMINT_PROJECT_ID}/story/ip-assets`, {
+    const ipRes = await fetch(`${baseUrl}/v1-alpha2/projects/${projectId}/story/ip-assets`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -66,7 +76,7 @@ export async function registerStoryIPAsset(
 
     // STEP 3: Attach Commercial License
     console.log("Attaching commercial license terms...");
-    const licenseRes = await fetch(`${CROSSMINT_BASE_URL}/v1-alpha2/projects/${process.env.CROSSMINT_PROJECT_ID}/story/licenses`, {
+    const licenseRes = await fetch(`${baseUrl}/v1-alpha2/projects/${projectId}/story/licenses`, {
         method: "POST",
         headers,
         body: JSON.stringify({

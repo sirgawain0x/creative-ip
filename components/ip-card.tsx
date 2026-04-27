@@ -8,7 +8,7 @@ import { type IPAsset } from '@/lib/data'
 import { Button } from './ui/button'
 import { BuyLicenseModal } from './buy-license-modal'
 import { useState } from 'react'
-import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
+import { useWallet, useAuth } from '@/hooks/use-story-wallet'
 
 const TYPE_ICON = {
   music: Music,

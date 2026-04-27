@@ -163,7 +163,7 @@
   background: #2D3A50;
 }
 
-/* Crossmint/Clerk auth modal usability overrides */
+/* Alchemy Account Kit (Clerk-powered) auth modal usability overrides */
 .cl-modalBackdrop {
   background: rgba(8, 11, 21, 0.78) !important;
   backdrop-filter: blur(6px);

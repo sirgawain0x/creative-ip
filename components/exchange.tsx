@@ -108,7 +108,7 @@ export function Exchange() {
           The Creative Exchange
         </h1>
         <p className="font-mono text-xs text-muted-foreground max-w-lg">
-          License world-class creative IP instantly. Backed by Story Protocol. Checkout via Crossmint — card or crypto.
+          License world-class creative IP instantly. Backed by Story Protocol. Wallets powered by Alchemy.
         </p>
       </div>
 
