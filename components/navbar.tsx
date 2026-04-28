@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useLayoutEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -22,15 +22,37 @@ const NAV_LINKS = [
   { href: '/launchpad', label: 'Launchpad' },
 ]
 
+const MD_MIN = 768
+
 export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  /** Client-only; avoids relying on Tailwind `md:` media queries in the bundle. */
+  const [isDesktop, setIsDesktop] = useState(false)
   const user = useUser()
   const address = user?.address
   const isConnected = !!user
   const { logout } = useLogout()
   const { openAuthModal } = useAuthModal()
   const [isOnrampLoading, setIsOnrampLoading] = useState(false)
+
+  useLayoutEffect(() => {
+    const update = () => {
+      const desktop =
+        window.innerWidth >= MD_MIN ||
+        window.matchMedia(`(min-width: ${MD_MIN}px)`).matches
+      setIsDesktop(desktop)
+      if (desktop) setMobileOpen(false)
+    }
+    update()
+    const mq = window.matchMedia(`(min-width: ${MD_MIN}px)`)
+    mq.addEventListener('change', update)
+    window.addEventListener('resize', update)
+    return () => {
+      mq.removeEventListener('change', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [])
 
   const handleBuyUSDC = async () => {
     if (!address) return
@@ -60,9 +82,9 @@ export function Navbar() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border">
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5 group">
             <div className="relative w-8 h-8">
               <Image
                 src="/logo.svg"
@@ -77,8 +99,11 @@ export function Navbar() {
             <Sparkles className="w-4 h-4 text-accent hidden sm:block" />
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
+          {/* Desktop Nav — inline display so visibility never depends on Tailwind .flex/.hidden */}
+          <div
+            className="items-center gap-1"
+            style={{ display: isDesktop ? 'flex' : 'none' }}
+          >
               {NAV_LINKS.map(({ href, label }) => (
                 <Link
                   key={href}
@@ -96,7 +121,7 @@ export function Navbar() {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             {/* Live indicator */}
             <div className="hidden sm:flex items-center gap-1.5 font-semibold text-[10px] text-muted-foreground mr-2">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -106,7 +131,11 @@ export function Navbar() {
             {isConnected && address ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="hidden md:flex cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30">
+                    <button
+                      type="button"
+                      className="cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+                      style={{ display: isDesktop ? 'flex' : 'none' }}
+                    >
                       <div className="w-2 h-2 rounded-full bg-emerald-500" />
                       <span className="font-mono text-[10px] text-foreground">
                         {address.slice(0, 6)}...{address.slice(-4)}
@@ -153,8 +182,15 @@ export function Navbar() {
                 </DropdownMenu>
               ) : (
                 <Button
-                  size="sm"
-                  className="hidden md:flex rounded-xl border border-primary/70 !bg-transparent px-4 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
+                  className="shrink-0 rounded-xl border border-primary/70 !bg-transparent font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
+                  style={{
+                    display: isDesktop ? 'inline-flex' : 'none',
+                    boxSizing: 'border-box',
+                    minHeight: '2.25rem',
+                    padding: '0.5rem 1.25rem',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                   onClick={() => openAuthModal()}
                 >
                   Get Started
@@ -163,7 +199,9 @@ export function Navbar() {
 
             {/* Mobile menu toggle */}
             <button
-              className="flex md:hidden h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+              type="button"
+              className="h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+              style={{ display: isDesktop ? 'none' : 'flex' }}
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -173,8 +211,8 @@ export function Navbar() {
         </nav>
 
         {/* Mobile Menu */}
-        {mobileOpen && (
-          <div className="md:hidden glass border-t border-border px-4 py-4 space-y-2">
+        {mobileOpen && !isDesktop && (
+          <div className="glass border-t border-border px-4 py-4 space-y-2">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
