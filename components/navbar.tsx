@@ -40,11 +40,11 @@ export function Navbar() {
       const res = await fetch('/api/onramp/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address })
+        body: JSON.stringify({ address }),
       })
-      
+
       const data = await res.json()
-      
+
       if (data.onrampUrl) {
         window.open(data.onrampUrl, '_blank')
       } else {
@@ -78,21 +78,21 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden sm:flex items-center gap-1">
-            {NAV_LINKS.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-widest transition-all',
-                  pathname === href
-                    ? 'bg-primary/15 text-primary shadow-sm shadow-primary/10'
-                    : 'text-muted-foreground hover:-translate-y-0.5 hover:bg-primary/10 hover:text-primary'
-                )}
-              >
-                {label}
-              </Link>
-            ))}
+          <div className="hidden md:flex items-center gap-1">
+              {NAV_LINKS.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    'rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-widest transition-all',
+                    pathname === href
+                      ? 'bg-primary/15 text-primary shadow-sm shadow-primary/10'
+                      : 'text-muted-foreground hover:-translate-y-0.5 hover:bg-primary/10 hover:text-primary'
+                  )}
+                >
+                  {label}
+                </Link>
+              ))}
           </div>
 
           {/* Right side */}
@@ -104,66 +104,66 @@ export function Navbar() {
             </div>
 
             {isConnected && address ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="hidden cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 sm:flex">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="font-mono text-[10px] text-foreground">
-                      {address.slice(0, 6)}...{address.slice(-4)}
-                    </span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 glass border-border/60">
-                  <DropdownMenuLabel className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
-                    Wallet Connected
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-border/60" />
-                  <DropdownMenuItem className="font-mono text-xs flex items-center justify-between cursor-default">
-                    <div className="flex items-center gap-2">
-                      <Wallet className="w-3.5 h-3.5" />
-                      <span>Balance</span>
-                    </div>
-                    <span>0.00 USDC</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={handleBuyUSDC}
-                    disabled={isOnrampLoading}
-                    className={cn(
-                      "flex w-full cursor-pointer items-center justify-between font-mono text-xs text-primary transition-colors hover:bg-primary/10 focus:bg-primary/10 focus:text-primary",
-                      isOnrampLoading && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Coins className="w-3.5 h-3.5" />
-                      <span>{isOnrampLoading ? 'Loading...' : 'Buy USDC'}</span>
-                    </div>
-                    {!isOnrampLoading && <ExternalLink className="w-3.5 h-3.5" />}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-border/60" />
-                  <DropdownMenuItem
-                    onClick={() => logout()}
-                    className="cursor-pointer font-mono text-xs text-destructive transition-colors hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive"
-                  >
-                    <div className="flex items-center gap-2">
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Disconnect</span>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button
-                size="sm"
-                className="hidden rounded-xl border border-primary/70 !bg-transparent px-4 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40 sm:flex"
-                onClick={() => openAuthModal()}
-              >
-                Get Started
-              </Button>
-            )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="hidden md:flex cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="font-mono text-[10px] text-foreground">
+                        {address.slice(0, 6)}...{address.slice(-4)}
+                      </span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 glass border-border/60">
+                    <DropdownMenuLabel className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+                      Wallet Connected
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-border/60" />
+                    <DropdownMenuItem className="font-mono text-xs flex items-center justify-between cursor-default">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="w-3.5 h-3.5" />
+                        <span>Balance</span>
+                      </div>
+                      <span>0.00 USDC</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleBuyUSDC}
+                      disabled={isOnrampLoading}
+                      className={cn(
+                        'flex w-full cursor-pointer items-center justify-between font-mono text-xs text-primary transition-colors hover:bg-primary/10 focus:bg-primary/10 focus:text-primary',
+                        isOnrampLoading && 'opacity-50 cursor-not-allowed'
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Coins className="w-3.5 h-3.5" />
+                        <span>{isOnrampLoading ? 'Loading...' : 'Buy USDC'}</span>
+                      </div>
+                      {!isOnrampLoading && <ExternalLink className="w-3.5 h-3.5" />}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-border/60" />
+                    <DropdownMenuItem
+                      onClick={() => logout()}
+                      className="cursor-pointer font-mono text-xs text-destructive transition-colors hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive"
+                    >
+                      <div className="flex items-center gap-2">
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Disconnect</span>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  size="sm"
+                  className="hidden md:flex rounded-xl border border-primary/70 !bg-transparent px-4 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
+                  onClick={() => openAuthModal()}
+                >
+                  Get Started
+                </Button>
+              )}
 
             {/* Mobile menu toggle */}
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 sm:hidden"
+              className="flex md:hidden h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -174,7 +174,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="sm:hidden glass border-t border-border px-4 py-4 space-y-2">
+          <div className="md:hidden glass border-t border-border px-4 py-4 space-y-2">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
@@ -214,7 +214,10 @@ export function Navbar() {
                   <Button
                     variant="ghost"
                     className="w-full rounded-xl font-mono text-xs text-destructive transition-all hover:bg-destructive/10 hover:text-destructive gap-2"
-                    onClick={() => { logout(); setMobileOpen(false) }}
+                    onClick={() => {
+                      logout()
+                      setMobileOpen(false)
+                    }}
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Disconnect
@@ -223,7 +226,10 @@ export function Navbar() {
               ) : (
                 <Button
                   className="!h-11 w-full rounded-xl border border-primary/70 !bg-transparent px-5 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
-                  onClick={() => { openAuthModal(); setMobileOpen(false) }}
+                  onClick={() => {
+                    openAuthModal()
+                    setMobileOpen(false)
+                  }}
                 >
                   Get Started
                 </Button>
