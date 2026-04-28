@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -21,38 +21,16 @@ const NAV_LINKS = [
   { href: '/', label: 'Exchange' },
   { href: '/launchpad', label: 'Launchpad' },
 ]
-const DESKTOP_MEDIA_QUERY = '(min-width: 768px)'
 
 export function Navbar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
   const user = useUser()
   const address = user?.address
   const isConnected = !!user
   const { logout } = useLogout()
   const { openAuthModal } = useAuthModal()
   const [isOnrampLoading, setIsOnrampLoading] = useState(false)
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY)
-    const updateViewportMode = () => {
-      setIsDesktop(mediaQuery.matches)
-    }
-
-    updateViewportMode()
-    mediaQuery.addEventListener('change', updateViewportMode)
-
-    return () => {
-      mediaQuery.removeEventListener('change', updateViewportMode)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (isDesktop && mobileOpen) {
-      setMobileOpen(false)
-    }
-  }, [isDesktop, mobileOpen])
 
   const handleBuyUSDC = async () => {
     if (!address) return
@@ -100,8 +78,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          {isDesktop && (
-            <div className="flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1">
               {NAV_LINKS.map(({ href, label }) => (
                 <Link
                   key={href}
@@ -116,8 +93,7 @@ export function Navbar() {
                   {label}
                 </Link>
               ))}
-            </div>
-          )}
+          </div>
 
           {/* Right side */}
           <div className="flex items-center gap-3">
@@ -127,11 +103,10 @@ export function Navbar() {
               LIVE
             </div>
 
-            {isDesktop &&
-              (isConnected && address ? (
+            {isConnected && address ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30">
+                    <button className="hidden md:flex cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-secondary/50 px-3 py-1.5 outline-none transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30">
                       <div className="w-2 h-2 rounded-full bg-emerald-500" />
                       <span className="font-mono text-[10px] text-foreground">
                         {address.slice(0, 6)}...{address.slice(-4)}
@@ -179,29 +154,27 @@ export function Navbar() {
               ) : (
                 <Button
                   size="sm"
-                  className="rounded-xl border border-primary/70 !bg-transparent px-4 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
+                  className="hidden md:flex rounded-xl border border-primary/70 !bg-transparent px-4 font-semibold text-xs !text-primary transition-all hover:-translate-y-0.5 hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/40"
                   onClick={() => openAuthModal()}
                 >
                   Get Started
                 </Button>
-              ))}
+              )}
 
             {/* Mobile menu toggle */}
-            {!isDesktop && (
-              <button
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30"
-                onClick={() => setMobileOpen(!mobileOpen)}
-                aria-label="Toggle menu"
-              >
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            )}
+            <button
+              className="flex md:hidden h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-secondary/30 text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </nav>
 
         {/* Mobile Menu */}
-        {!isDesktop && mobileOpen && (
-          <div className="glass border-t border-border px-4 py-4 space-y-2">
+        {mobileOpen && (
+          <div className="md:hidden glass border-t border-border px-4 py-4 space-y-2">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
