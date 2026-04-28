@@ -8,7 +8,7 @@ import { type IPAsset } from '@/lib/data'
 import { Button } from './ui/button'
 import { BuyLicenseModal } from './buy-license-modal'
 import { useState } from 'react'
-import { useWallet, useAuth } from '@crossmint/client-sdk-react-ui'
+import { useUser, useAuthModal } from '@account-kit/react'
 
 const TYPE_ICON = {
   music: Music,
@@ -45,8 +45,8 @@ interface IPCardProps {
 
 export function IPCard({ asset, className }: IPCardProps) {
   const [buyOpen, setBuyOpen] = useState(false)
-  const { status, wallet } = useWallet()
-  const { login } = useAuth()
+  const isConnected = !!useUser()
+  const { openAuthModal } = useAuthModal()
   const Icon = TYPE_ICON[asset.type]
 
   return (
@@ -123,21 +123,21 @@ export function IPCard({ asset, className }: IPCardProps) {
             <Button
               size="sm"
               className={cn(
-                "font-mono text-[10px] transition-all gap-1",
-                status === 'loaded' && wallet
-                  ? "bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/30"
-                  : "bg-secondary/50 text-foreground border border-border/60 hover:bg-secondary"
+                "rounded-xl border font-mono text-[10px] transition-all gap-1 hover:-translate-y-0.5",
+                isConnected
+                  ? "border-primary/70 !bg-transparent !text-primary hover:border-[#EC407A] hover:!bg-primary/10 hover:!text-primary-foreground hover:shadow-lg hover:shadow-primary/35"
+                  : "border-primary/45 !bg-transparent text-primary hover:border-[#EC407A] hover:!bg-primary/10 hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/30"
               )}
               onClick={() => {
-                if (status === 'loaded' && wallet) {
+                if (isConnected) {
                   setBuyOpen(true)
                 } else {
-                  if (login) login()
+                  openAuthModal()
                 }
               }}
             >
               <ShoppingCart className="w-3 h-3" />
-              {status === 'loaded' && wallet ? 'License' : 'Connect to License'}
+              {isConnected ? 'License' : 'Connect to License'}
             </Button>
           </div>
         </div>
